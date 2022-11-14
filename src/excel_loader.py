@@ -1,8 +1,7 @@
-
 from enum import Enum
 from openpyxl import load_workbook
-from model import Patient
 
+from src.model import Patient
 
 class MainSheetNotFound(Exception):
     def __init__(self, message):

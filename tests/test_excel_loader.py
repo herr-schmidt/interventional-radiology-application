@@ -38,6 +38,12 @@ class TestExcelLoader(unittest.TestCase):
         self.assertEqual(patients[3].infectious, False)
         self.assertEqual(patients[3].list_insertion_date, datetime.datetime(2022, 10, 14))
 
+    def test_loading_empty_file(self):
+        loader = excel_loader.ExcelLoader()
+
+        # first pass the exception, then the callable and after that all of its needed parameters
+        self.assertRaises(excel_loader.InvalidRow, loader.load_patients, "./tests/test_files/empty_test_list.xlsx")
+
 
 if __name__ == '__main__':
     unittest.main()

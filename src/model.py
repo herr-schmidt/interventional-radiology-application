@@ -2,7 +2,7 @@ import datetime
 
 class Patient:
 
-    def __init__(self, name: str, surname: str, services: list[str], anesthesia: bool, infectious: bool, list_insertion_date: datetime):
+    def __init__(self, name, surname, services, anesthesia, infectious, list_insertion_date):
         self.name = name
         self.surname =surname
         self.services = services

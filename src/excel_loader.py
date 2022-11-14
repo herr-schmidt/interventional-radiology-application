@@ -3,7 +3,13 @@ from openpyxl import load_workbook
 
 from src.model import Patient
 
+
 class MainSheetNotFound(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
+class InvalidRow(Exception):
     def __init__(self, message):
         super().__init__(message)
 
@@ -20,6 +26,15 @@ class ExcelIndex(Enum):
 class ExcelLoader:
     def __init__(self):
         pass
+
+    @staticmethod
+    def has_none_fields(row) -> bool:
+        return (row[ExcelIndex.NAME.value] is None
+                or row[ExcelIndex.SURNAME.value] is None
+                or row[ExcelIndex.SERVICES.value] is None
+                or row[ExcelIndex.ANESTHESIA.value] is None
+                or row[ExcelIndex.INFECTIOUS.value] is None
+                or row[ExcelIndex.LIST_INSERTION_DATE.value] is None)
 
     def find_main_sheet(self, workbook):
         sheet_names = workbook.sheetnames
@@ -38,6 +53,9 @@ class ExcelLoader:
         patients = []
         rows = list(active_sheet.values)
         for row in rows[1:]:  # skip header
+            if ExcelLoader.has_none_fields(row):
+                raise InvalidRow("Row contains at least one None value among its fields.")
+
             name = row[ExcelIndex.NAME.value].strip()
             surname = row[ExcelIndex.SURNAME.value].strip()
             services = row[ExcelIndex.SERVICES.value].strip()

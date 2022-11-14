@@ -41,10 +41,9 @@ class ExcelLoader:
             name = row[ExcelIndex.NAME.value].strip()
             surname = row[ExcelIndex.SURNAME.value].strip()
             services = row[ExcelIndex.SERVICES.value].strip()
-            anesthesia = row[ExcelIndex.ANESTHESIA.value].strip()
-            infectious = row[ExcelIndex.INFECTIOUS.value].strip()
-            list_insertion_date = row[ExcelIndex.LIST_INSERTION_DATE.value].strip(
-            )
+            anesthesia = row[ExcelIndex.ANESTHESIA.value].lower() == "true"
+            infectious = row[ExcelIndex.INFECTIOUS.value].lower() == "true"
+            list_insertion_date = row[ExcelIndex.LIST_INSERTION_DATE.value]
 
             patients.append(Patient(name,
                                     surname,

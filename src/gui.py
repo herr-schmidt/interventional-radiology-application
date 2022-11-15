@@ -1,7 +1,9 @@
 import sys
 import threading
 from tkinter import *
+from tkinter.scrolledtext import ScrolledText
 from tkinter.ttk import *
+from pandastable import Table
 
 from click import command
 
@@ -25,10 +27,19 @@ class GUI(object):
         # notebooks and command panel
         self.upper_frame = Frame(master=self.master)
         self.upper_frame.pack(side=TOP)
-        
+
         # log output
         self.lower_frame = Frame(master=self.master)
         self.lower_frame.pack(side=BOTTOM)
+
+        self.input_columns = 6
+        self.columns_translations = {"a": "Nome",
+                                     "b": "Cognome",
+                                     "c": "Prestazioni",
+                                     "d": "Anestesia",
+                                     "e": "Infezioni in atto",
+                                     "f": "Data inserimento in lista",
+                                     }
 
         self.initializeUI()
 
@@ -58,35 +69,44 @@ class GUI(object):
         menu.add_cascade(label="Edit", menu=edit_menu)
 
     def create_notebooks(self):
-        self.notebook_frame = Frame(self.upper_frame)
+        self.notebook_frame = Labelframe(self.upper_frame)
         self.notebook_frame.pack(side=LEFT, fill=X, anchor=W, padx=10)
 
-        notebook = Notebook(self.notebook_frame)
-        notebook.pack(pady=10, side=TOP, expand=True, fill=BOTH, padx=10)
+        self.notebook = Notebook(self.notebook_frame)
+        self.notebook.pack(side=TOP, expand=True, fill=BOTH)
 
-        tab_1 = Frame(notebook, width=900, height=500)
-        tab_2 = Frame(notebook, width=900, height=500)
+        self.input_tab = Frame(self.notebook, width=900, height=500)
+        self.output_tab = Frame(self.notebook, width=900, height=500)
 
-        tab_1.pack(fill=BOTH, expand=True)
-        tab_2.pack(fill=BOTH, expand=True)
+        self.input_tab.pack(fill=BOTH, expand=True)
+        self.output_tab.pack(fill=BOTH, expand=True)
 
-        notebook.add(tab_1, text='Tab 1')
-        notebook.add(tab_2, text='Tab 2')
+        self.notebook.add(self.input_tab, text='Lista pazienti')
+        self.notebook.add(self.output_tab, text='Pianificazione')
+
+        self.initialize_input_table()
+
+    def initialize_input_table(self):
+        self.input_table = Table(parent=self.input_tab, cols=self.input_columns)
+        self.input_table.model.df = self.input_table.model.df.rename(columns=self.columns_translations)
+        self.input_table.autoResizeColumns()
+        self.input_table.show()
 
     def create_log_text_box(self):
         self.output_frame = Frame(master=self.lower_frame)
         self.output_frame.pack(fill=BOTH)
 
-        self.scroll_bar = Scrollbar(self.output_frame)
-        self.scroll_bar.pack(side=RIGHT, fill=Y)
+        # self.scroll_bar = Scrollbar(self.output_frame)
+        # self.scroll_bar.pack(side=RIGHT, fill=Y)
 
-        self.text_box = Text(master=self.output_frame, width=50, height=16)
+        self.text_box = ScrolledText(
+            master=self.output_frame, width=200, height=16)
         self.text_box.pack(fill=X)
         self.text_box.config(background="#000000", fg="#ffffff")
         # to correctly resize the scroll bar
-        self.text_box.config(yscrollcommand=self.scroll_bar.set)
-
-        self.scroll_bar.config(command=self.text_box.yview)
+        # self.text_box.config(yscrollcommand=self.scroll_bar.set)
+#
+        # self.scroll_bar.config(command=self.text_box.yview)
 
         sys.stdout = StdoutRedirector(self.text_box)
 

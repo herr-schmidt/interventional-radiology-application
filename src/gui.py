@@ -4,8 +4,9 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter.scrolledtext import ScrolledText
 from tkinter.ttk import *
-from pandastable import Table, config
+from pandastable import Table, config, TableModel
 import math
+import pandas
 
 from click import command
 
@@ -49,28 +50,50 @@ class GUI(object):
                                           }
         self.output_columns = 10
 
+        self.planning_number = 0
+
         self.initializeUI()
 
     def initializeUI(self):
         self.create_upper_menus()
-        self.create_notebooks()
+        self.create_notebook()
         self.create_command_panel()
         self.create_log_text_box()
 
         print("Welcome to the Interventional Radiology Planner and Scheduler.")
 
     def create_command_panel(self):
-        self.buttons_frame = Labelframe(master=self.upper_frame, text="", width=math.floor(self.screen_width * 0.2))
-        self.buttons_frame.pack(side=RIGHT, expand=True, fill=BOTH, anchor=E)
+        self.buttons_frame = Labelframe(master=self.upper_frame, text="", width=math.floor(self.screen_width * 0.3))
+        self.buttons_frame.pack(side=TOP, fill=Y, expand=True)
 
         self.test_button = Button(master=self.buttons_frame,
                                   width=12,
                                   text="Test")
         self.test_button.pack()
 
-    def open_file_callback(self):
+    def import_callback(self):
+        input_tab = Frame(self.notebook)
+        input_tab.pack(fill=BOTH, expand=True)
+
+        self.notebook.add(input_tab, text="Lista pazienti " + str(self.planning_number))
+        self.planning_number += 1
+
         self.selected_file = filedialog.askopenfile()
         print(self.selected_file.name)
+
+        import_data_frame = pandas.read_excel(self.selected_file.name)
+        self.initialize_input_table(input_tab=input_tab, data_frame=import_data_frame)
+        
+
+    def new_planning_callback(self):
+        input_tab = Frame(self.notebook)
+        input_tab.pack(fill=BOTH, expand=True)
+
+        self.notebook.add(input_tab, text="Lista pazienti " + str(self.planning_number))
+        self.planning_number += 1
+
+        self.initialize_input_table(input_tab=input_tab, data_frame=None)
+
 
     def create_upper_menus(self):
         menu = Menu(self.master)
@@ -82,61 +105,54 @@ class GUI(object):
         edit_menu = Menu(menu)
         menu.add_cascade(label="Edit", menu=edit_menu)
 
-        file_menu.add_command(label='Open...', command=self.open_file_callback)
+        file_menu.add_command(label="Nuova pianificazione", command=self.new_planning_callback)
+        file_menu.add_command(label="Importa...", command=self.import_callback)
 
-    def create_notebooks(self):
-        self.notebook_frame = Labelframe(self.upper_frame)
+    def create_notebook(self):
+        self.notebook_frame = Frame(self.upper_frame)
         self.notebook_frame.pack(side=LEFT, fill=BOTH, anchor=W)
 
-        self.notebook = Notebook(self.notebook_frame, width=math.floor(self.screen_width * 0.8), height=math.floor(self.screen_height * 0.6))
+        self.notebook = Notebook(self.notebook_frame, width=math.floor(self.screen_width * 0.8), height=math.floor(self.screen_height * 0.55))
         self.notebook.pack(expand=True, fill=BOTH)
 
-        self.input_tab = Frame(self.notebook)
-        self.output_tab = Frame(self.notebook)
-
-        self.input_tab.pack(fill=BOTH, expand=True)
-        self.output_tab.pack(fill=BOTH, expand=True)
-
-        self.notebook.add(self.input_tab, text='Lista pazienti')
-        self.notebook.add(self.output_tab, text='Pianificazione')
-
-        self.initialize_input_table()
-
-    def initialize_input_table(self):
-        self.input_table = Table(parent=self.input_tab, cols=self.input_columns)
-        self.input_table.model.df = self.input_table.model.df.rename(columns=self.input_columns_translations)
+    def initialize_input_table(self, input_tab, data_frame):
+        input_table = Table(parent=input_tab, cols=self.input_columns, dataframe=data_frame)
+        
+        input_table.model.df = input_table.model.df.rename(columns=self.input_columns_translations)
 
         options={"cellwidth": 100}
-        config.apply_options(options,self.input_table)
+        config.apply_options(options,input_table)
 
-        self.input_table.columnwidths["Nome"] = 150
-        self.input_table.columnwidths["Prestazioni"] = 450
-        self.input_table.columnwidths["Data inserimento in lista"] = 250
-        self.input_table.autoResizeColumns()
-        self.input_table.redraw()
+        input_table.columnwidths["Nome"] = 150
+        input_table.columnwidths["Cognome"] = 150
+        input_table.columnwidths["Prestazioni"] = 450
+        input_table.columnwidths["Data inserimento in lista"] = 250
 
-        self.input_table.show()
+        input_table.show()
+        input_table.redraw() # for avoiding the strange behavior of empty first imported table
 
     def create_log_text_box(self):
         self.output_frame = Frame(master=self.lower_frame)
         self.output_frame.pack(fill=BOTH)
 
-        self.text_box = ScrolledText(master=self.output_frame, width=500, height=20)
+        self.text_box = ScrolledText(master=self.output_frame, width=500, height=16)
         self.text_box.pack(fill=X)
         self.text_box.config(background="#000000", fg="#ffffff")
 
         sys.stdout = StdoutRedirector(self.text_box)
 
 
-ws = Tk()
-ws.title("Interventional Radiology Planner & Scheduler")
+root = Tk()
+root.title("Interventional Radiology Planner & Scheduler")
+root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
+root.state("zoomed")
 
 # Create a style
-style = Style(ws)
+style = Style(root)
 
 # Set the theme with the theme_use method
 style.theme_use('winnative')  # put the theme name here, that you want to use
 
-gui = GUI(ws)
+gui = GUI(root)
 
-ws.mainloop()
+root.mainloop()

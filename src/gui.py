@@ -23,6 +23,47 @@ class StdoutRedirector(object):
         pass
 
 
+class ScaleWithEntry(Frame):
+
+    def round_value(self, value):
+        if(self.type == "int"):
+            self.variable.set(round(float(value)))
+        else:
+            self.variable.set(round(float(value), 2))
+
+    def __init__(self, master, type, from_, to, value, orient, labelText):
+        super(ScaleWithEntry, self).__init__(master=master)
+        self.labelText = StringVar()
+        self.labelText.set(labelText)
+        self.label = Label(master=self, textvariable=self.labelText)
+        self.label.pack(side=TOP, anchor=NW)
+
+        self.variable = None
+        self.type = type
+        if(type == "int"):
+            self.variable = IntVar(value=value)
+        else:
+            self.variable = DoubleVar(value=value)
+        self.slider = Scale(
+            master=self,
+            from_=from_,
+            to=to,
+            variable=self.variable,
+            # resolution=0.1,
+            orient=orient,
+            # label=label,
+            command=self.round_value
+        )
+        self.slider.pack(side=LEFT)
+
+        self.entry = Entry(
+            master=self,
+            textvariable=self.variable,
+            width=4
+        )
+        self.entry.pack(expand=True, side=RIGHT)
+
+
 class GUI(object):
     def __init__(self, master):
         self.master = master
@@ -33,7 +74,7 @@ class GUI(object):
         print(self.screen_width)
 
         # notebooks and command panel
-        self.upper_frame = Frame(master=self.master)
+        self.upper_frame = Frame(master=self.master, name="upper_frame")
         self.upper_frame.pack(side=TOP, fill=BOTH, expand=True)
 
         # log output
@@ -57,19 +98,42 @@ class GUI(object):
     def initializeUI(self):
         self.create_upper_menus()
         self.create_notebook()
-        self.create_command_panel()
+        self.create_solver_command_panel()
+        self.create_edit_command_panel()
         self.create_log_text_box()
 
         print("Welcome to the Interventional Radiology Planner and Scheduler.")
 
-    def create_command_panel(self):
-        self.buttons_frame = Labelframe(master=self.upper_frame, text="", width=math.floor(self.screen_width * 0.3))
-        self.buttons_frame.pack(side=TOP, fill=Y, expand=True)
+    def close_active_tab(self):
+        active_tab = self.notebook.nametowidget(self.notebook.select())
+        active_tab.destroy()
 
-        self.test_button = Button(master=self.buttons_frame,
-                                  width=12,
-                                  text="Test")
-        self.test_button.pack()
+        if(len(self.upper_frame.nametowidget("notebook_frame.notebook").children) == 0):
+            self.upper_frame.nametowidget("edit_frame.close_active_tab_button").config(state=DISABLED)
+
+    def create_edit_command_panel(self):
+        edit_frame = Labelframe(master=self.upper_frame, name="edit_frame", text="Edit panel", width=math.floor(self.screen_width * 0.3))
+        edit_frame.pack(side=TOP, fill=BOTH, expand=True, padx=(5, 5), pady=(5, 0))
+
+        close_active_tab_button = Button(master=edit_frame,
+                                  name="close_active_tab_button",
+                                  state=DISABLED,
+                                  text="Chiudi scheda attiva",
+                                  command=self.close_active_tab)
+        close_active_tab_button.pack(anchor=W, padx=(5, 0))
+
+    def create_solver_command_panel(self):
+        solver_frame = Labelframe(master=self.upper_frame, text="Solver", width=math.floor(self.screen_width * 0.3))
+        solver_frame.pack(side=BOTTOM, fill=BOTH, expand=True, padx=(5, 5), pady=(0, 5))
+
+        gap_scale = ScaleWithEntry(master=solver_frame,
+                                       type="double",
+                                       from_=0,
+                                       to=5,
+                                       value=1,
+                                       orient="horizontal",
+                                       labelText="Gap")
+        gap_scale.pack(anchor=W, padx=(10, 0))
 
     def import_callback(self):
         input_tab = Frame(self.notebook)
@@ -99,7 +163,7 @@ class GUI(object):
         menu = Menu(self.master)
         self.master.config(menu=menu)
 
-        file_menu = Menu(menu)
+        file_menu = Menu(menu, tearoff=0)
         menu.add_cascade(label="File", menu=file_menu)
 
         edit_menu = Menu(menu)
@@ -109,10 +173,10 @@ class GUI(object):
         file_menu.add_command(label="Importa...", command=self.import_callback)
 
     def create_notebook(self):
-        self.notebook_frame = Frame(self.upper_frame)
-        self.notebook_frame.pack(side=LEFT, fill=BOTH, anchor=W)
+        self.notebook_frame = Frame(self.upper_frame, name="notebook_frame")
+        self.notebook_frame.pack(side=LEFT, fill=BOTH, anchor=W, padx=(5, 0), pady=(5, 5))
 
-        self.notebook = Notebook(self.notebook_frame, width=math.floor(self.screen_width * 0.8), height=math.floor(self.screen_height * 0.55))
+        self.notebook = Notebook(self.notebook_frame, name="notebook", width=math.floor(self.screen_width * 0.8), height=math.floor(self.screen_height * 0.55))
         self.notebook.pack(expand=True, fill=BOTH)
 
     def initialize_input_table(self, input_tab, data_frame):
@@ -130,6 +194,8 @@ class GUI(object):
 
         input_table.show()
         input_table.redraw() # for avoiding the strange behavior of empty first imported table
+
+        self.upper_frame.nametowidget("edit_frame.close_active_tab_button").config(state=ACTIVE)
 
     def create_log_text_box(self):
         self.output_frame = Frame(master=self.lower_frame)

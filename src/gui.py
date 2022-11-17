@@ -6,6 +6,7 @@ from tkinter.ttk import *
 from pandastable import Table, config
 import math
 import pandas
+import customtkinter as ctk
 
 from click import command
 
@@ -90,7 +91,7 @@ class GUI(object):
                                            "e": "Infezioni",
                                            "f": "Data inserimento in lista",
                                           }
-        self.output_columns = 10
+        self.icons = []
 
         self.planning_number = 0
 
@@ -98,6 +99,7 @@ class GUI(object):
 
     def initializeUI(self):
         self.create_upper_menus()
+        self.create_toolbar()
         self.create_notebook()
         self.create_solver_command_panel()
         self.create_edit_command_panel()
@@ -105,23 +107,37 @@ class GUI(object):
 
         print("Welcome to the Interventional Radiology Planner and Scheduler.")
 
+    def create_toolbar(self):
+        # toolbar
+        toolbar_frame = Frame(master=self.upper_frame, name="toolbar_frame")
+        toolbar_frame.pack(side=TOP, fill=BOTH, expand=True)
+
+        self.add_toolbar_button(toolbar_frame, 24, 24, "resources/new-document.png", "new_button", self.new_planning_callback)
+        self.add_toolbar_button(toolbar_frame, 24, 24, "resources/open-folder.png", "open_button", self.import_callback)
+        self.add_toolbar_button(toolbar_frame, 24, 24, "resources/close.png", "close_active_tab_button", self.close_active_tab, state=DISABLED)
+
+    def add_toolbar_button(self, toolbar_frame, x_subsample, y_subsample, icon_path, button_name, command, state=NORMAL):
+        icon = PhotoImage(file=icon_path).subsample(x_subsample, y_subsample)
+        self.icons.append(icon) # to avoid garbage collection of a PhotoImage we need to keep a reference to it
+        button = Button(master=toolbar_frame,
+                                         name=button_name,
+                                         image=icon,
+                                         command=command,
+                                         state=state
+                                         )
+        button.pack(side=LEFT, anchor=W, padx=(5, 0))
+
+
     def close_active_tab(self):
         active_tab = self.notebook.nametowidget(self.notebook.select())
         active_tab.destroy()
 
         if(len(self.upper_frame.nametowidget("notebook_frame.notebook").children) == 0):
-            self.upper_frame.nametowidget("edit_frame.close_active_tab_button").config(state=DISABLED)
+            self.upper_frame.nametowidget("toolbar_frame.close_active_tab_button").config(state=DISABLED)
 
     def create_edit_command_panel(self):
         edit_frame = Labelframe(master=self.upper_frame, name="edit_frame", text="Edit panel", width=math.floor(self.screen_width * 0.3))
         edit_frame.pack(side=TOP, fill=BOTH, expand=True, padx=(5, 5), pady=(5, 0))
-
-        close_active_tab_button = Button(master=edit_frame,
-                                  name="close_active_tab_button",
-                                  state=DISABLED,
-                                  text="Chiudi scheda attiva",
-                                  command=self.close_active_tab)
-        close_active_tab_button.pack(anchor=W, padx=(5, 0))
 
     def create_solver_command_panel(self):
         solver_frame = Labelframe(master=self.upper_frame, text="Solver", width=math.floor(self.screen_width * 0.3))
@@ -186,18 +202,35 @@ class GUI(object):
         
         input_table.model.df = input_table.model.df.rename(columns=self.input_columns_translations)
 
-        options={"cellwidth": 100}
+        options = {'align': 'w',
+                   'cellwidth': 150,
+                   'floatprecision': 2,
+                   'font': 'Microsoft Tai Le',
+                   'fontsize': 10,
+                   'rowheight': 20,
+                   'colselectedcolor': "#c7deff",
+                   'rowselectedcolor': "#c7deff",
+                   'textcolor': 'black'
+                  }
         config.apply_options(options,input_table)
 
-        input_table.columnwidths["Nome"] = 150
-        input_table.columnwidths["Cognome"] = 150
+        input_table.show()
+
         input_table.columnwidths["Prestazioni"] = 450
         input_table.columnwidths["Data inserimento in lista"] = 250
 
-        input_table.show()
+        input_table.colheader.bgcolor = "#e8e8e8"
+        input_table.rowheader.bgcolor = "#e8e8e8"
+
+        input_table.colheader.colselectedcolor = "#5e9cff"
+        input_table.rowheader.rowselectedcolor = "#5e9cff"
+
+        input_table.colheader.textcolor = "black"
+        input_table.rowheader.textcolor = "black"
+
         input_table.redraw() # for avoiding the strange behavior of empty first imported table
 
-        self.upper_frame.nametowidget("edit_frame.close_active_tab_button").config(state=ACTIVE)
+        self.upper_frame.nametowidget("toolbar_frame.close_active_tab_button").config(state=ACTIVE)
 
     def create_log_text_box(self):
         self.output_frame = Frame(master=self.lower_frame)
@@ -210,7 +243,7 @@ class GUI(object):
         sys.stdout = StdoutRedirector(self.text_box)
 
 
-root = Tk()
+root = ctk.CTk()
 root.title("Interventional Radiology Planner & Scheduler")
 root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
 root.state("zoomed")

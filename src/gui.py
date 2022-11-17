@@ -1,10 +1,9 @@
 import sys
-import threading
 from tkinter import *
 from tkinter import filedialog
 from tkinter.scrolledtext import ScrolledText
 from tkinter.ttk import *
-from pandastable import Table, config, TableModel
+from pandastable import Table, config
 import math
 import pandas
 
@@ -29,7 +28,7 @@ class ScaleWithEntry(Frame):
         if(self.type == "int"):
             self.variable.set(round(float(value)))
         else:
-            self.variable.set(round(float(value), 2))
+            self.variable.set(round(float(value), 1))
 
     def __init__(self, master, type, from_, to, value, orient, labelText):
         super(ScaleWithEntry, self).__init__(master=master)
@@ -59,7 +58,9 @@ class ScaleWithEntry(Frame):
         self.entry = Entry(
             master=self,
             textvariable=self.variable,
-            width=4
+            width=4,
+            state=DISABLED,
+            justify=CENTER
         )
         self.entry.pack(expand=True, side=RIGHT)
 
@@ -132,20 +133,21 @@ class GUI(object):
                                        to=5,
                                        value=1,
                                        orient="horizontal",
-                                       labelText="Gap")
+                                       labelText="Gap relativo (%)")
         gap_scale.pack(anchor=W, padx=(10, 0))
 
     def import_callback(self):
+        selected_file = filedialog.askopenfile(filetypes=[("File Excel", ["*.xlsx", "*.xls"]), ("Tutti i file", "*.*")])
+        if selected_file is None:
+            return
+
         input_tab = Frame(self.notebook)
         input_tab.pack(fill=BOTH, expand=True)
 
         self.notebook.add(input_tab, text="Lista pazienti " + str(self.planning_number))
         self.planning_number += 1
 
-        self.selected_file = filedialog.askopenfile()
-        print(self.selected_file.name)
-
-        import_data_frame = pandas.read_excel(self.selected_file.name)
+        import_data_frame = pandas.read_excel(selected_file.name)
         self.initialize_input_table(input_tab=input_tab, data_frame=import_data_frame)
         
 

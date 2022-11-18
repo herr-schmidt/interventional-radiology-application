@@ -113,6 +113,7 @@ class GUI(object):
                                            "f": "Data inserimento in lista",
                                            }
         self.icons = []
+        self.tooltips = []
 
         self.planning_number = 0
 
@@ -138,11 +139,11 @@ class GUI(object):
         toolbar_frame = Frame(master=self.upper_frame, name="toolbar_frame")
         toolbar_frame.pack(side=TOP, fill=X, expand=False)
 
-        self.add_toolbar_button(toolbar_frame, 32, 32, "resources/new-document.png", "new_button", self.new_planning_callback)
-        self.add_toolbar_button(toolbar_frame, 32, 32, "resources/open-folder.png", "open_button", self.import_callback)
-        self.add_toolbar_button(toolbar_frame, 32, 32, "resources/close.png", "close_active_tab_button", self.close_active_tab, state=DISABLED)
+        self.add_toolbar_button(toolbar_frame, 32, 32, "resources/new-document.png", "new_button", self.new_planning_callback, text="Nuova scheda")
+        self.add_toolbar_button(toolbar_frame, 32, 32, "resources/open-folder.png", "open_button", self.import_callback, text="Importa...")
+        self.add_toolbar_button(toolbar_frame, 32, 32, "resources/close.png", "close_active_tab_button", self.close_active_tab, text="Chiudi scheda attiva", state=DISABLED)
 
-    def add_toolbar_button(self, toolbar_frame, x_subsample, y_subsample, icon_path, button_name, command, state=NORMAL):
+    def add_toolbar_button(self, toolbar_frame, x_subsample, y_subsample, icon_path, button_name, command, text=None, state=NORMAL):
         icon = PhotoImage(file=icon_path).subsample(x_subsample, y_subsample)
         # to avoid garbage collection of a PhotoImage we need to keep a reference to it
         self.icons.append(icon)
@@ -154,7 +155,8 @@ class GUI(object):
                         )
         button.pack(side=LEFT, anchor=W, padx=(5, 0), pady=(5, 0))
 
-        self.tooltip = ButtonToolTip(button=button, text="")
+        if text:
+            self.tooltips.append(ButtonToolTip(button=button, text=text))
 
     def close_active_tab(self):
         active_tab = self.notebook.nametowidget(self.notebook.select())

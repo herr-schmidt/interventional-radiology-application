@@ -2,8 +2,8 @@ import sys
 from tkinter import *
 from tkinter import filedialog
 from tkinter.scrolledtext import ScrolledText
-from tkinter.ttk import *
 from pandastable import Table, config
+import tkinter.ttk as ttk
 import math
 import pandas
 import customtkinter as ctk
@@ -21,47 +21,42 @@ class StdoutRedirector(object):
         pass
 
 
-class ScaleWithEntry(Frame):
-
-    def round_value(self, value):
-        if(self.type == "int"):
-            self.variable.set(round(float(value)))
-        else:
-            self.variable.set(round(float(value), 1))
-
-    def __init__(self, master, type, from_, to, value, orient, labelText):
-        super(ScaleWithEntry, self).__init__(master=master)
-        self.labelText = StringVar()
-        self.labelText.set(labelText)
-        self.label = Label(master=self, textvariable=self.labelText)
-        self.label.pack(side=TOP, anchor=NW)
-
-        self.variable = None
-        self.type = type
-        if(type == "int"):
-            self.variable = IntVar(value=value)
-        else:
-            self.variable = DoubleVar(value=value)
-        self.slider = Scale(
-            master=self,
-            from_=from_,
-            to=to,
-            variable=self.variable,
-            # resolution=0.1,
-            orient=orient,
-            # label=label,
-            command=self.round_value
-        )
-        self.slider.pack(side=LEFT)
-
-        self.entry = Entry(
-            master=self,
-            textvariable=self.variable,
-            width=4,
-            state=DISABLED,
-            justify=CENTER
-        )
-        self.entry.pack(expand=True, side=RIGHT)
+# class ScaleWithLabel(Frame):
+# 
+#     def __init__(self, master, type, from_, to, value, orient, labelText):
+#         super(ScaleWithLabel, self).__init__(master=master)
+#         self.labelText = StringVar()
+#         self.labelText.set(labelText)
+#         self.title_label = Label(master=self, textvariable=self.labelText)
+#         self.title_label.pack(side=TOP, anchor=NW, pady=(0, 5))
+# 
+#         self.variable = None
+#         self.type = type
+#         if(type == "int"):
+#             self.variable = IntVar(value=value)
+#         else:
+#             self.variable = DoubleVar(value=value)
+#         self.slider = Scale(
+#             master=self,
+#             from_=from_,
+#             to=to,
+#             resolution=0.05,
+#             variable=self.variable,
+#             orient=orient,
+#             label="ASDASD",
+#         )
+#         self.slider.pack(side=LEFT)
+# 
+#         self.value_label = Label(
+#             master=self,
+#             textvariable=self.variable,
+#             width=4,
+#             state=DISABLED,
+#             anchor=CENTER,
+#             relief=SOLID,
+#             borderwidth=1
+#         )
+#         self.value_label.pack(expand=True, side=RIGHT, padx=(10, 0))
 
 
 class ButtonToolTip:
@@ -80,7 +75,8 @@ class ButtonToolTip:
         self.label = Label(self.tooltip,
                            text=self.text,
                            background="#ffffe0",
-                           borderwidth=20)
+                           relief=SOLID,
+                           borderwidth=1)
         self.label.pack()
 
     def on_leave(self, event):
@@ -94,7 +90,7 @@ class GUI(object):
         self.screen_width = self.master.winfo_screenwidth()
         self.screen_height = self.master.winfo_screenheight()
 
-        print(self.screen_width)
+        # print(self.screen_width)
 
         # notebooks, command panels and toolbars
         self.upper_frame = Frame(master=self.master, name="upper_frame")
@@ -151,9 +147,10 @@ class GUI(object):
                         name=button_name,
                         image=icon,
                         command=command,
-                        state=state
+                        state=state,
+                        relief="flat"
                         )
-        button.pack(side=LEFT, anchor=W, padx=(5, 0), pady=(5, 0))
+        button.pack(side=LEFT, anchor=W, padx=(5, 0), pady=(5, 5))
 
         if text:
             self.tooltips.append(ButtonToolTip(button=button, text=text))
@@ -167,25 +164,38 @@ class GUI(object):
                 "toolbar_frame.close_active_tab_button").config(state=DISABLED)
 
     def create_edit_command_panel(self):
-        edit_frame = Labelframe(master=self.upper_frame, name="edit_frame",
+        edit_frame = ttk.Labelframe(master=self.upper_frame, name="edit_frame",
                                 text="Edit panel", width=math.floor(self.screen_width * 0.3))
         edit_frame.pack(side=TOP, fill=BOTH, expand=True,
                         padx=(5, 5), pady=(5, 0))
 
     def create_solver_command_panel(self):
-        solver_frame = Labelframe(
+        solver_frame = ttk.Labelframe(
             master=self.upper_frame, text="Solver", width=math.floor(self.screen_width * 0.3))
         solver_frame.pack(side=BOTTOM, fill=BOTH,
                           expand=True, padx=(5, 5), pady=(0, 5))
 
-        gap_scale = ScaleWithEntry(master=solver_frame,
-                                   type="double",
-                                   from_=0,
-                                   to=5,
-                                   value=1,
-                                   orient="horizontal",
-                                   labelText="Gap relativo (%)")
-        gap_scale.pack(anchor=W, padx=(10, 0))
+        gap_variable = DoubleVar(value=0.5)
+        gap_slider = Scale(
+            master=solver_frame,
+            from_=0,
+            to=5,
+            resolution=0.05,
+            variable=gap_variable,
+            label="Gap relativo (%)",
+            orient=HORIZONTAL,
+            length=solver_frame.winfo_width() / 3
+        )
+        gap_slider.pack(anchor=W)
+
+        # gap_scale = ScaleWithLabel(master=solver_frame,
+        #                            type="double",
+        #                            from_=0,
+        #                            to=5,
+        #                            value=1,
+        #                            orient="horizontal",
+        #                            labelText="Gap relativo (%)")
+        # gap_scale.pack(anchor=W, padx=(10, 0))
 
     def import_callback(self):
         selected_file = filedialog.askopenfile(
@@ -236,7 +246,7 @@ class GUI(object):
         # avoid frame from expanding when the inner widget expands
         self.notebook_frame.pack_propagate(False)
 
-        self.notebook = Notebook(self.notebook_frame, name="notebook")
+        self.notebook = ttk.Notebook(self.notebook_frame, name="notebook")
         self.notebook.pack(expand=True, fill=BOTH)
 
     def initialize_input_table(self, input_tab, data_frame):
@@ -265,6 +275,7 @@ class GUI(object):
 
         input_table.colheader.bgcolor = "#e8e8e8"
         input_table.rowheader.bgcolor = "#e8e8e8"
+        input_table.rowindexheader.bgcolor = "#e8e8e8"
 
         input_table.colheader.colselectedcolor = "#5e9cff"
         input_table.rowheader.rowselectedcolor = "#5e9cff"
@@ -295,10 +306,10 @@ root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(),
 root.state("zoomed")
 
 # Create a style
-style = Style(root)
+#style = ttk.Style(root)
 
 # Set the theme with the theme_use method
-style.theme_use('winnative')  # put the theme name here, that you want to use
+#style.theme_use('winnative')  # put the theme name here, that you want to use
 
 gui = GUI(root)
 

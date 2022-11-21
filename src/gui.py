@@ -274,11 +274,22 @@ class GUI(object):
             extension = ".odf"
         else:
             raise Exception("...")
+
+        file_name += str(extension)
         
-        # TODO: save actual file corresponding to the currently selected tab
-        
-        
-        
+        tabs = self.notebook.tabs()
+        current_tab_id = self.notebook.index(self.notebook.select())
+
+        selected_tab = self.notebook.nametowidget(tabs[current_tab_id])
+        for w in selected_tab.winfo_children():
+            if isinstance(w, Table):
+                table = w
+                break
+
+        table.model.df.to_excel(file_name,
+                                header=list(table.model.df.columns),
+                                index=False # avoid writing a column of indices
+                                )
 
     def new_planning_callback(self):
         input_tab = Frame(self.notebook)

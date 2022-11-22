@@ -2,7 +2,7 @@ import sys
 from tkinter import *
 from tkinter import filedialog
 from tkinter.scrolledtext import ScrolledText
-from pandastable import Table, config
+from pandastable import Table, config, ToolTip
 import tkinter.ttk as ttk
 import math
 import pandas
@@ -23,6 +23,34 @@ class StdoutRedirector(object):
         pass
 
 
+class EntryWithLabel(Frame):
+
+    def __init__(self, master, label_text, entry_width=20, label_width=10):
+        super(EntryWithLabel, self).__init__(master=master, width=200)
+
+        self.entry_variable = StringVar()
+        self.entry = Entry(master=self, textvariable=self.entry_variable, width=entry_width)
+
+        self.label = Label(master=self, text=label_text, width=label_width, anchor=W)
+
+        self.label.pack(side=LEFT)
+        self.entry.pack(side=LEFT)
+
+
+class CheckboxWithLabel(Frame):
+
+    def __init__(self, master, label_text):
+        super(CheckboxWithLabel, self).__init__(master=master)
+
+        self.entry_variable = BooleanVar()
+        self.checkbox = Checkbutton(master=self, variable=self.entry_variable)
+
+        self.label = Label(master=self, text=label_text)
+
+        self.checkbox.pack(side=LEFT, anchor=W)
+        self.label.pack(side=LEFT, anchor=W)
+        
+
 class InsertionDialog():
 
     def __init__(self, button):
@@ -33,51 +61,27 @@ class InsertionDialog():
     def handle_left_click(self, event):
         self.dialog = Toplevel()
 
-        frame = Frame(master=self.dialog, width=100, height=100)
+        dialog_frame = Frame(master=self.dialog, width=100, height=100)
 
+        registry_frame = LabelFrame(master=dialog_frame, text="Anagrafica")
+        name_entry = EntryWithLabel(registry_frame, "Nome")
+        surname_entry = EntryWithLabel(registry_frame, "Cognome")
 
+        planning_frame = LabelFrame(master=dialog_frame, text="Pianificazione")
+        waiting_list_date_entry = EntryWithLabel(planning_frame, "Inserimento in lista d'attesa", label_width=24)
+        anesthesia_checkbox = CheckboxWithLabel(planning_frame, "Anestesia")
+        infections_checkbox = CheckboxWithLabel(planning_frame, "Infezioni in atto")
 
-class ButtonToolTip:
+        dialog_frame.pack()
+        registry_frame.pack(side=TOP, padx=(10, 10), pady=(10, 5), expand=True, fill=X)
+        planning_frame.pack(side=BOTTOM, padx=(10, 10), pady=(5, 10), expand=True, fill=X)
 
-    def __init__(self, button, button_frame, text=None):
-        self.button = button
-        self.button_frame = button_frame
-        self.text = text
+        name_entry.pack(side=TOP, anchor=W, padx=(5, 5), pady=(5, 5))
+        surname_entry.pack(side=TOP, anchor=W, padx=(5, 5), pady=(0, 5))
+        waiting_list_date_entry.pack(side=TOP, anchor=W, padx=(5, 5), pady=(5, 5))
+        anesthesia_checkbox.pack(side=TOP, anchor=W, padx=(5, 5), pady=(0, 5))
+        infections_checkbox.pack(side=TOP, anchor=W, padx=(5, 5), pady=(0, 5))
 
-        self.button_original_color = self.button.cget("background")
-        self.button_hover_color = "#e7f1ff"
-        self.button_frame_border_orig_color = self.button_frame.cget("highlightbackground")
-        self.button_frame_border_hover_color = "#5fa2ff"
-
-        self.button.bind("<Enter>", self.on_enter)
-        self.button.bind("<Leave>", self.on_leave)
-
-    def on_enter(self, event):
-        self.tooltip = Toplevel()
-        self.tooltip.overrideredirect(True)
-        self.tooltip.geometry(
-            f"+{self.button.winfo_rootx()+30}+{self.button.winfo_rooty()+30}")
-
-        self.label = Label(
-            self.tooltip,
-            text=self.text,
-            background="#ffffe0",
-            relief=SOLID,
-            borderwidth=1,
-        )
-        self.label.pack()
-
-        # paint button
-        if self.button.cget("state") in [ACTIVE, NORMAL]:
-            self.button.configure(bg=self.button_hover_color)
-            self.button_frame.configure(highlightbackground=self.button_frame_border_hover_color)
-
-    def on_leave(self, event):
-        self.tooltip.destroy()
-
-        # reset original button color
-        self.button.configure(bg=self.button_original_color)
-        self.button_frame.configure(highlightbackground=self.button_frame_border_orig_color)
 
 
 class GUI(object):
@@ -88,6 +92,11 @@ class GUI(object):
 
     ADD_PATIENT_BUTTON = "add_patient_button"
     EDIT_PATIENT_BUTTON = "edit_patient_button"
+
+    BUTTON_COLOR = "gray90"
+    BUTTON_HOVER_COLOR = "#e7f1ff"
+    BUTTON_FRAME_BORDER_COLOR = "gray70"
+    BUTTON_FRAME_BORDER_HOVER_COLOR = "#5fa2ff"
 
     def __init__(self, master):
         self.master = master
@@ -234,15 +243,34 @@ class GUI(object):
             command=command,
             state=state,
             relief="flat",
-            background="gray90"
+            background=self.BUTTON_COLOR
         )
         button.pack(expand=True, fill=BOTH)
 
         if text:
-            self.tooltips.append(ButtonToolTip(button=button, button_frame=button_frame, text=text))
+            self.tooltips.append(ToolTip.createToolTip(button, text))
 
         if button_name in [self.ADD_PATIENT_BUTTON,self.EDIT_PATIENT_BUTTON]:
             self.dialogs.append(InsertionDialog(button=button))
+
+        # ToolTip.createToolTip already binds a widget to an enter/leave event, so we use
+        # add="+" for binding multiple functions to the same event.
+        button.bind("<Enter>", self.repaint_on_enter, add="+")
+        button.bind("<Leave>", self.repaint_on_leave, add="+")
+
+    def repaint_on_enter(self, event):
+        button = event.widget
+        button_frame = button.master
+        if button.cget("state") in [ACTIVE, NORMAL]:
+            button.configure(bg=self.BUTTON_HOVER_COLOR)
+            button_frame.configure(highlightbackground=self.BUTTON_FRAME_BORDER_HOVER_COLOR)
+
+    def repaint_on_leave(self, event):
+        button = event.widget
+        button_frame = button.master
+
+        button.configure(bg=self.BUTTON_COLOR)
+        button_frame.configure(highlightbackground=self.BUTTON_FRAME_BORDER_COLOR)
 
     def add_patient(self):
         pass

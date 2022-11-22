@@ -7,6 +7,7 @@ import tkinter.ttk as ttk
 import math
 import pandas
 import customtkinter as ctk
+import numpy as np
 
 
 class StdoutRedirector(object):
@@ -22,14 +23,31 @@ class StdoutRedirector(object):
         pass
 
 
+class InsertionDialog():
+
+    def __init__(self, button):
+        self.button = button
+
+        self.button.bind("<Button-1>", self.handle_left_click)
+
+    def handle_left_click(self, event):
+        self.dialog = Toplevel()
+
+        frame = Frame(master=self.dialog, width=100, height=100)
+
+
+
 class ButtonToolTip:
 
-    def __init__(self, button, text=None):
+    def __init__(self, button, button_frame, text=None):
         self.button = button
+        self.button_frame = button_frame
         self.text = text
 
         self.button_original_color = self.button.cget("background")
-        self.button_hover_color = "#a6cbff"
+        self.button_hover_color = "#e7f1ff"
+        self.button_frame_border_orig_color = self.button_frame.cget("highlightbackground")
+        self.button_frame_border_hover_color = "#5fa2ff"
 
         self.button.bind("<Enter>", self.on_enter)
         self.button.bind("<Leave>", self.on_leave)
@@ -52,12 +70,14 @@ class ButtonToolTip:
         # paint button
         if self.button.cget("state") in [ACTIVE, NORMAL]:
             self.button.configure(bg=self.button_hover_color)
+            self.button_frame.configure(highlightbackground=self.button_frame_border_hover_color)
 
     def on_leave(self, event):
         self.tooltip.destroy()
 
         # reset original button color
         self.button.configure(bg=self.button_original_color)
+        self.button_frame.configure(highlightbackground=self.button_frame_border_orig_color)
 
 
 class GUI(object):
@@ -65,6 +85,9 @@ class GUI(object):
     # constants
     EXCEL_FILE = "File Excel"
     ODF_FILE = "ODF Spreadsheet (.odf)"
+
+    ADD_PATIENT_BUTTON = "add_patient_button"
+    EDIT_PATIENT_BUTTON = "edit_patient_button"
 
     def __init__(self, master):
         self.master = master
@@ -93,6 +116,7 @@ class GUI(object):
         }
         self.icons = []
         self.tooltips = []
+        self.dialogs = []
 
         self.planning_number = 0
 
@@ -104,7 +128,7 @@ class GUI(object):
         self.create_footer()
         self.create_notebook()
         self.create_solver_command_panel()
-        self.create_edit_command_panel()
+        # self.create_edit_command_panel()
         self.create_log_text_box()
 
         print("Welcome to the Interventional Radiology Planner and Scheduler.")
@@ -118,10 +142,13 @@ class GUI(object):
         toolbar_frame = Frame(master=self.upper_frame, name="toolbar_frame")
         toolbar_frame.pack(side=TOP, fill=X, expand=False)
 
+        toolbar_icon_sampling_X = 20
+        toolbar_icon_sampling_Y = 20
+
         self.add_toolbar_button(
             toolbar_frame,
-            28,
-            28,
+            toolbar_icon_sampling_X,
+            toolbar_icon_sampling_Y,
             "resources/new-document.png",
             "new_button",
             self.new_planning_callback,
@@ -129,8 +156,8 @@ class GUI(object):
         )
         self.add_toolbar_button(
             toolbar_frame,
-            28,
-            28,
+            toolbar_icon_sampling_X,
+            toolbar_icon_sampling_Y,
             "resources/open-folder.png",
             "open_button",
             self.import_callback,
@@ -138,8 +165,8 @@ class GUI(object):
         )
         self.add_toolbar_button(
             toolbar_frame,
-            28,
-            28,
+            toolbar_icon_sampling_X,
+            toolbar_icon_sampling_Y,
             "resources/diskette.png",
             "save_button",
             self.export_callback,
@@ -147,13 +174,38 @@ class GUI(object):
         )
         self.add_toolbar_button(
             toolbar_frame,
-            28,
-            28,
+            toolbar_icon_sampling_X,
+            toolbar_icon_sampling_Y,
             "resources/close.png",
             "close_active_tab_button",
             self.close_active_tab,
             text="Chiudi scheda attiva",
             state=DISABLED,
+        )
+
+        separator = ttk.Separator(master=toolbar_frame, orient="vertical")
+        separator.pack(side=LEFT, anchor=W, padx=(5, 0), pady=(5, 5), fill=Y)
+
+        self.add_toolbar_button(
+            toolbar_frame,
+            toolbar_icon_sampling_X,
+            toolbar_icon_sampling_Y,
+            "resources/add-patient.png",
+            self.ADD_PATIENT_BUTTON,
+            self.add_patient,
+            text="Aggiungi paziente",
+            state=NORMAL,
+        )
+
+        self.add_toolbar_button(
+            toolbar_frame,
+            toolbar_icon_sampling_X,
+            toolbar_icon_sampling_Y,
+            "resources/pencil.png",
+            self.EDIT_PATIENT_BUTTON,
+            self.edit_patient,
+            text="Modifica paziente",
+            state=NORMAL,
         )
 
     def add_toolbar_button(
@@ -167,21 +219,36 @@ class GUI(object):
         text=None,
         state=NORMAL,
     ):
-        icon = PhotoImage(file=icon_path).subsample(x_subsample, y_subsample)
+        icon = PhotoImage(file=icon_path)
+
+        button_frame = Frame(toolbar_frame, highlightbackground="gray70", highlightthickness=1, name=button_name+"_frame",
+        height=16, width=16)
+        button_frame.pack(side=LEFT, anchor=W, padx=(5, 0), pady=(5, 5))
+        
         # to avoid garbage collection of a PhotoImage we need to keep a reference to it
         self.icons.append(icon)
         button = Button(
-            master=toolbar_frame,
+            master=button_frame,
             name=button_name,
             image=icon,
             command=command,
             state=state,
             relief="flat",
+            background="gray90"
         )
-        button.pack(side=LEFT, anchor=W, padx=(5, 0), pady=(5, 5))
+        button.pack(expand=True, fill=BOTH)
 
         if text:
-            self.tooltips.append(ButtonToolTip(button=button, text=text))
+            self.tooltips.append(ButtonToolTip(button=button, button_frame=button_frame, text=text))
+
+        if button_name in [self.ADD_PATIENT_BUTTON,self.EDIT_PATIENT_BUTTON]:
+            self.dialogs.append(InsertionDialog(button=button))
+
+    def add_patient(self):
+        pass
+
+    def edit_patient(self):
+        pass
 
     def close_active_tab(self):
         active_tab = self.notebook.nametowidget(self.notebook.select())
@@ -191,7 +258,7 @@ class GUI(object):
                 self.upper_frame.nametowidget(
                     "notebook_frame.notebook").children) == 0:
             self.upper_frame.nametowidget(
-                "toolbar_frame.close_active_tab_button").config(state=DISABLED)
+                "toolbar_frame.close_active_tab_button_frame.close_active_tab_button").config(state=DISABLED)
 
     def create_edit_command_panel(self):
         edit_frame = ttk.Labelframe(
@@ -210,7 +277,7 @@ class GUI(object):
         solver_frame = ttk.Labelframe(
             master=self.upper_frame,
             text="Solver",
-            width=math.floor(self.screen_width * 0.3),
+            width=math.floor(self.screen_width * 0.3)
         )
         solver_frame.pack(side=BOTTOM,
                           fill=BOTH,
@@ -336,7 +403,11 @@ class GUI(object):
     def initialize_input_table(self, input_tab, data_frame):
         input_table = Table(parent=input_tab,
                             cols=self.input_columns,
-                            dataframe=data_frame)
+                            rows=1,
+                            dataframe=data_frame,
+                            enable_menus=False,
+                            editable=False,
+                            showstatusbar=True)
 
         input_table.model.df = input_table.model.df.rename(
             columns=self.input_columns_translations)
@@ -351,13 +422,15 @@ class GUI(object):
             "colselectedcolor": "#c7deff",
             "rowselectedcolor": "#c7deff",
             "textcolor": "black",
+            "statusbar_font": ("Microsoft Tai Le", 10),
+            "statusbar_font_color": "#000000",
         }
         config.apply_options(options, input_table)
 
         input_table.show()
 
-        input_table.columnwidths["Prestazioni"] = 450
-        input_table.columnwidths["Data inserimento in lista"] = 250
+        input_table.columnwidths["Prestazioni"] = 600
+        input_table.columnwidths["Data inserimento in lista"] = 300
 
         input_table.colheader.bgcolor = "#e8e8e8"
         input_table.rowheader.bgcolor = "#e8e8e8"
@@ -369,11 +442,14 @@ class GUI(object):
         input_table.colheader.textcolor = "black"
         input_table.rowheader.textcolor = "black"
 
+        input_table.statusbar.sfont = ("Microsoft Tai Le", 10)
+        input_table.statusbar.clr = "#000000"
+
         # for avoiding the strange behavior of empty first imported table
         input_table.redraw()
 
         self.upper_frame.nametowidget(
-            "toolbar_frame.close_active_tab_button").config(state=ACTIVE)
+            "toolbar_frame.close_active_tab_button_frame.close_active_tab_button").config(state=NORMAL)
 
     def create_log_text_box(self):
         # self.output_frame = Frame(master=self.lower_frame)

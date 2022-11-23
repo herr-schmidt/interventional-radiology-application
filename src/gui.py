@@ -2,12 +2,12 @@ import sys
 from tkinter import *
 from tkinter import filedialog
 from tkinter.scrolledtext import ScrolledText
-from pandastable import Table, config, ToolTip
+from pandastable import Table, config
 import tkinter.ttk as ttk
 import math
 import pandas
 import customtkinter as ctk
-import numpy as np
+import tktooltip
 
 
 class StdoutRedirector(object):
@@ -23,65 +23,50 @@ class StdoutRedirector(object):
         pass
 
 
-class EntryWithLabel(Frame):
+class EntryWithLabel(ctk.CTkFrame):
 
-    def __init__(self, master, label_text, entry_width=20, label_width=10):
-        super(EntryWithLabel, self).__init__(master=master, width=200)
+    def __init__(self, master, label_text, entry_width=200, label_width=10):
+        super(EntryWithLabel, self).__init__(master=master, width=200, fg_color="#ffffff")
 
         self.entry_variable = StringVar()
-        self.entry = Entry(master=self, textvariable=self.entry_variable, width=entry_width)
+        self.entry = ctk.CTkEntry(master=self, textvariable=self.entry_variable, width=entry_width, border_width=1, border_color="gray90")
 
-        self.label = Label(master=self, text=label_text, width=label_width, anchor=W)
+        self.label = ctk.CTkLabel(master=self, text=label_text, width=label_width, anchor=W, fg_color="#ffffff", text_font=("Microsoft Tai Le", 10))
 
-        self.label.pack(side=LEFT)
+        self.label.pack(side=TOP, anchor=W)
         self.entry.pack(side=LEFT)
-
-
-class CheckboxWithLabel(Frame):
-
-    def __init__(self, master, label_text):
-        super(CheckboxWithLabel, self).__init__(master=master)
-
-        self.entry_variable = BooleanVar()
-        self.checkbox = Checkbutton(master=self, variable=self.entry_variable)
-
-        self.label = Label(master=self, text=label_text)
-
-        self.checkbox.pack(side=LEFT, anchor=W)
-        self.label.pack(side=LEFT, anchor=W)
         
 
 class InsertionDialog():
 
-    def __init__(self, button):
-        self.button = button
+    def __init__(self):
+        self.dialog = ctk.CTkToplevel(fg_color="#ffffff")
 
-        self.button.bind("<Button-1>", self.handle_left_click)
+        dialog_frame = ctk.CTkFrame(master=self.dialog, width=100, height=100, fg_color="#ffffff")
 
-    def handle_left_click(self, event):
-        self.dialog = Toplevel()
+        registry_label = ctk.CTkLabel(master=dialog_frame, text="Anagrafica", text_font=("Microsoft Tai Le", 12), width=10)
+        name_entry = EntryWithLabel(dialog_frame, "Nome")
+        surname_entry = EntryWithLabel(dialog_frame, "Cognome")
 
-        dialog_frame = Frame(master=self.dialog, width=100, height=100)
+        planning_label = ctk.CTkLabel(master=dialog_frame, text="Pianificazione", text_font=("Microsoft Tai Le", 12), width=14)
+        waiting_list_date_entry = EntryWithLabel(dialog_frame, "Inserimento in lista d'attesa", label_width=24)
 
-        registry_frame = LabelFrame(master=dialog_frame, text="Anagrafica")
-        name_entry = EntryWithLabel(registry_frame, "Nome")
-        surname_entry = EntryWithLabel(registry_frame, "Cognome")
+        anesthesia = BooleanVar(False)
+        infections = BooleanVar(False)
 
-        planning_frame = LabelFrame(master=dialog_frame, text="Pianificazione")
-        waiting_list_date_entry = EntryWithLabel(planning_frame, "Inserimento in lista d'attesa", label_width=24)
-        anesthesia_checkbox = CheckboxWithLabel(planning_frame, "Anestesia")
-        infections_checkbox = CheckboxWithLabel(planning_frame, "Infezioni in atto")
+        anesthesia_checkbox = ctk.CTkCheckBox(master=dialog_frame, variable=anesthesia, border_color="gray90", border_width=1, hover=False, text="Anestesia", text_font=("Microsoft Tai Le", 10), checkmark_color="#ffffff", fg_color="#287cfa")
+        infections_checkbox = ctk.CTkCheckBox(master=dialog_frame, variable=infections, border_color="gray90", border_width=1, hover=False, text="Infezioni in atto", text_font=("Microsoft Tai Le", 10), checkmark_color="#ffffff", fg_color="#287cfa")
 
         dialog_frame.pack()
-        registry_frame.pack(side=TOP, padx=(10, 10), pady=(10, 5), expand=True, fill=X)
-        planning_frame.pack(side=BOTTOM, padx=(10, 10), pady=(5, 10), expand=True, fill=X)
 
-        name_entry.pack(side=TOP, anchor=W, padx=(5, 5), pady=(5, 5))
-        surname_entry.pack(side=TOP, anchor=W, padx=(5, 5), pady=(0, 5))
-        waiting_list_date_entry.pack(side=TOP, anchor=W, padx=(5, 5), pady=(5, 5))
-        anesthesia_checkbox.pack(side=TOP, anchor=W, padx=(5, 5), pady=(0, 5))
-        infections_checkbox.pack(side=TOP, anchor=W, padx=(5, 5), pady=(0, 5))
+        registry_label.pack(side=TOP, anchor=W, padx=(20, 0))
+        name_entry.pack(side=TOP, anchor=W, padx=(20, 20), pady=(5, 5))
+        surname_entry.pack(side=TOP, anchor=W, padx=(20, 20), pady=(0, 20))
 
+        planning_label.pack(side=TOP, anchor=W, padx=(20, 0))
+        waiting_list_date_entry.pack(side=TOP, anchor=W, padx=(20, 20), pady=(5, 5))
+        anesthesia_checkbox.pack(side=TOP, anchor=W, padx=(20, 20), pady=(5, 5))
+        infections_checkbox.pack(side=TOP, anchor=W, padx=(20, 20), pady=(0, 20))
 
 
 class GUI(object):
@@ -107,11 +92,11 @@ class GUI(object):
         # print(self.screen_width)
 
         # notebooks, command panels and toolbars
-        self.upper_frame = Frame(master=self.master, name="upper_frame")
+        self.upper_frame = ctk.CTkFrame(master=self.master, name="upper_frame", fg_color="#F2F2F2")
         self.upper_frame.pack(side=TOP, fill=BOTH, expand=True)
 
         # log output and footer
-        self.lower_frame = Frame(master=self.master)
+        self.lower_frame = ctk.CTkFrame(master=self.master, name="lower_frame", fg_color="#F2F2F2")
         self.lower_frame.pack(side=BOTTOM, fill=BOTH, expand=True)
 
         self.input_columns = 6
@@ -132,24 +117,18 @@ class GUI(object):
         self.initializeUI()
 
     def initializeUI(self):
-        self.create_upper_menus()
+        # self.create_upper_menus()
         self.create_toolbar()
-        self.create_footer()
         self.create_notebook()
         self.create_solver_command_panel()
-        # self.create_edit_command_panel()
         self.create_log_text_box()
 
         print("Welcome to the Interventional Radiology Planner and Scheduler.")
 
-    def create_footer(self):
-        footer = Frame(master=self.lower_frame, name="footer_frame", height=30)
-        footer.pack(side=BOTTOM, fill=X, expand=True)
-
     def create_toolbar(self):
         # toolbar
-        toolbar_frame = Frame(master=self.upper_frame, name="toolbar_frame")
-        toolbar_frame.pack(side=TOP, fill=X, expand=False)
+        toolbar_frame = ctk.CTkFrame(master=self.upper_frame, name="toolbar_frame", fg_color="#E3E4E5")
+        toolbar_frame.pack(side=LEFT, fill=Y, expand=False, padx=(10, 10), pady=(10, 10))
 
         toolbar_icon_sampling_X = 20
         toolbar_icon_sampling_Y = 20
@@ -167,7 +146,7 @@ class GUI(object):
             toolbar_frame,
             toolbar_icon_sampling_X,
             toolbar_icon_sampling_Y,
-            "resources/open-folder.png",
+            "resources/xlsx-file-format-extension.png",
             "open_button",
             self.import_callback,
             text="Importa...",
@@ -176,7 +155,7 @@ class GUI(object):
             toolbar_frame,
             toolbar_icon_sampling_X,
             toolbar_icon_sampling_Y,
-            "resources/diskette.png",
+            "resources/floppy-disk.png",
             "save_button",
             self.export_callback,
             text="Salva",
@@ -185,21 +164,21 @@ class GUI(object):
             toolbar_frame,
             toolbar_icon_sampling_X,
             toolbar_icon_sampling_Y,
-            "resources/close.png",
+            "resources/bin.png",
             "close_active_tab_button",
             self.close_active_tab,
             text="Chiudi scheda attiva",
             state=DISABLED,
         )
 
-        separator = ttk.Separator(master=toolbar_frame, orient="vertical")
-        separator.pack(side=LEFT, anchor=W, padx=(5, 0), pady=(5, 5), fill=Y)
+        separator = ttk.Separator(master=toolbar_frame, orient="horizontal")
+        separator.pack(side=TOP, padx=(5, 5), pady=(5, 5), fill=X)
 
         self.add_toolbar_button(
             toolbar_frame,
             toolbar_icon_sampling_X,
             toolbar_icon_sampling_Y,
-            "resources/add-patient.png",
+            "resources/add-user.png",
             self.ADD_PATIENT_BUTTON,
             self.add_patient,
             text="Aggiungi paziente",
@@ -210,12 +189,43 @@ class GUI(object):
             toolbar_frame,
             toolbar_icon_sampling_X,
             toolbar_icon_sampling_Y,
-            "resources/pencil.png",
+            "resources/editing.png",
             self.EDIT_PATIENT_BUTTON,
             self.edit_patient,
             text="Modifica paziente",
             state=NORMAL,
         )
+
+        separator = ttk.Separator(master=toolbar_frame, orient="horizontal")
+        separator.pack(side=TOP, padx=(5, 5), pady=(5, 5), fill=X)
+
+        self.add_toolbar_button(
+            toolbar_frame,
+            toolbar_icon_sampling_X,
+            toolbar_icon_sampling_Y,
+            "resources/play-button.png",
+            "play_button",
+            self.launch_solver,
+            text="Calcola pianificazione",
+            state=NORMAL,
+        )
+
+        self.add_toolbar_button(
+            toolbar_frame,
+            toolbar_icon_sampling_X,
+            toolbar_icon_sampling_Y,
+            "resources/stop-button.png",
+            "stop_button",
+            self.stop_solver,
+            text="Interrompi pianificazione",
+            state=NORMAL,
+        )
+    
+    def launch_solver(self):
+        pass
+
+    def stop_solver(self):
+        pass
 
     def add_toolbar_button(
         self,
@@ -229,54 +239,36 @@ class GUI(object):
         state=NORMAL,
     ):
         icon = PhotoImage(file=icon_path)
-
-        button_frame = Frame(toolbar_frame, highlightbackground="gray70", highlightthickness=1, name=button_name+"_frame",
-        height=16, width=16)
-        button_frame.pack(side=LEFT, anchor=W, padx=(5, 0), pady=(5, 5))
         
         # to avoid garbage collection of a PhotoImage we need to keep a reference to it
         self.icons.append(icon)
-        button = Button(
-            master=button_frame,
+        button = ctk.CTkButton(
+            master=toolbar_frame,
             name=button_name,
             image=icon,
             command=command,
             state=state,
             relief="flat",
-            background=self.BUTTON_COLOR
+            fg_color="#E3E4E5",
+            # border_width=1,
+            # border_color="gray90",
+            hover_color="#D7D8D9",
+            text="",
+            text_color="#ffffff",
+            text_font=("Microsoft Tai Le Bold", 11),
+            width=icon.width() + 10,
+            height=icon.height() + 10
         )
-        button.pack(expand=True, fill=BOTH)
+        button.pack(side=TOP, anchor=CENTER, expand=False, padx=(5, 5), pady=(5, 5))
 
-        if text:
-            self.tooltips.append(ToolTip.createToolTip(button, text))
+        tktooltip.ToolTip(widget=button, msg=text, fg="#000000", bg="#ffffff")
 
-        if button_name in [self.ADD_PATIENT_BUTTON,self.EDIT_PATIENT_BUTTON]:
-            self.dialogs.append(InsertionDialog(button=button))
-
-        # ToolTip.createToolTip already binds a widget to an enter/leave event, so we use
-        # add="+" for binding multiple functions to the same event.
-        button.bind("<Enter>", self.repaint_on_enter, add="+")
-        button.bind("<Leave>", self.repaint_on_leave, add="+")
-
-    def repaint_on_enter(self, event):
-        button = event.widget
-        button_frame = button.master
-        if button.cget("state") in [ACTIVE, NORMAL]:
-            button.configure(bg=self.BUTTON_HOVER_COLOR)
-            button_frame.configure(highlightbackground=self.BUTTON_FRAME_BORDER_HOVER_COLOR)
-
-    def repaint_on_leave(self, event):
-        button = event.widget
-        button_frame = button.master
-
-        button.configure(bg=self.BUTTON_COLOR)
-        button_frame.configure(highlightbackground=self.BUTTON_FRAME_BORDER_COLOR)
 
     def add_patient(self):
-        pass
+        dialog = InsertionDialog()
 
     def edit_patient(self):
-        pass
+        dialog = InsertionDialog()
 
     def close_active_tab(self):
         active_tab = self.notebook.nametowidget(self.notebook.select())
@@ -285,8 +277,8 @@ class GUI(object):
         if len(
                 self.upper_frame.nametowidget(
                     "notebook_frame.notebook").children) == 0:
-            self.upper_frame.nametowidget(
-                "toolbar_frame.close_active_tab_button_frame.close_active_tab_button").config(state=DISABLED)
+            close_active_tab_button = self.upper_frame.nametowidget("toolbar_frame.close_active_tab_button")
+            close_active_tab_button.state = DISABLED
 
     def create_edit_command_panel(self):
         edit_frame = ttk.Labelframe(
@@ -302,41 +294,38 @@ class GUI(object):
                         pady=(5, 0))
 
     def create_solver_command_panel(self):
-        solver_frame = ttk.Labelframe(
+        solver_frame = ctk.CTkFrame(
             master=self.upper_frame,
-            text="Solver",
-            width=math.floor(self.screen_width * 0.3)
+            # text="Solver",
+            width=math.floor(self.screen_width * 0.3),
+            fg_color="#E3E4E5"
         )
         solver_frame.pack(side=BOTTOM,
                           fill=BOTH,
                           expand=True,
-                          padx=(5, 5),
-                          pady=(0, 5))
+                          padx=(10, 10),
+                          pady=(10, 10))
 
         # needed for getting a proper value when calling winfo_width()
         self.master.update_idletasks()
 
         gap_variable = DoubleVar(value=0.5)
-        gap_slider = Scale(
+        gap_slider = ctk.CTkSlider(
             master=solver_frame,
             from_=0,
             to=5,
-            resolution=0.05,
+            # resolution=0.05,
             variable=gap_variable,
-            label="Gap relativo (%)",
+            # label="Gap relativo (%)",
             orient=HORIZONTAL,
-            length=solver_frame.winfo_width() / 2,
+            # length=solver_frame.winfo_width() / 2,
+            number_of_steps=5/0.5,
+            progress_color="#287cfa",
+            button_color="#287cfa",
+            fg_color="gray90",
+            button_hover_color="#1d60c4"
         )
-        gap_slider.pack(anchor=W)
-
-        solve_button = Button(
-            master=solver_frame,
-            text="Calcola pianificazione",
-            name="solve_button",
-            command=self.solve,
-            state=DISABLED
-        )
-        solve_button.pack(side=BOTTOM, anchor=E, padx=(0, 5), pady=(0, 5))
+        gap_slider.pack(side=TOP, anchor=W, padx=(10, 10), pady=(10, 0))
 
     def solve(self):
         pass
@@ -387,7 +376,7 @@ class GUI(object):
                                 )
 
     def new_planning_callback(self):
-        input_tab = Frame(self.notebook)
+        input_tab = ctk.CTkFrame(self.notebook)
         input_tab.pack(fill=BOTH, expand=True)
 
         self.notebook.add(input_tab,
@@ -411,22 +400,23 @@ class GUI(object):
         file_menu.add_command(label="Importa...", command=self.import_callback)
 
     def create_notebook(self):
-        self.notebook_frame = Frame(
+        self.notebook_frame = ctk.CTkFrame(
             self.upper_frame,
             name="notebook_frame",
-            width=math.floor(self.screen_width * 0.8),
+            width=math.floor(self.screen_width * 0.65),
             height=math.floor(self.screen_height * 0.5),
+            fg_color="#E3E4E5"
         )
         self.notebook_frame.pack(side=LEFT,
-                                 fill=BOTH,
-                                 anchor=W,
-                                 padx=(5, 0),
-                                 pady=(5, 5))
+                                 # fill=BOTH,
+                                 # anchor=W,
+                                 padx=(0, 0),
+                                 pady=(10, 10))
         # avoid frame from expanding when the inner widget expands
         self.notebook_frame.pack_propagate(False)
 
         self.notebook = ttk.Notebook(self.notebook_frame, name="notebook")
-        self.notebook.pack(expand=True, fill=BOTH)
+        self.notebook.pack(expand=True, fill=BOTH, padx=(30, 30), pady=(30, 30))
 
     def initialize_input_table(self, input_tab, data_frame):
         input_table = Table(parent=input_tab,
@@ -435,7 +425,7 @@ class GUI(object):
                             dataframe=data_frame,
                             enable_menus=False,
                             editable=False,
-                            showstatusbar=True)
+                            showstatusbar=False)
 
         input_table.model.df = input_table.model.df.rename(
             columns=self.input_columns_translations)
@@ -470,22 +460,22 @@ class GUI(object):
         input_table.colheader.textcolor = "black"
         input_table.rowheader.textcolor = "black"
 
-        input_table.statusbar.sfont = ("Microsoft Tai Le", 10)
-        input_table.statusbar.clr = "#000000"
+        # input_table.statusbar.sfont = ("Microsoft Tai Le", 10)
+        # input_table.statusbar.clr = "#000000"
 
         # for avoiding the strange behavior of empty first imported table
         input_table.redraw()
 
-        self.upper_frame.nametowidget(
-            "toolbar_frame.close_active_tab_button_frame.close_active_tab_button").config(state=NORMAL)
+        close_active_tab_button = self.upper_frame.nametowidget("toolbar_frame.close_active_tab_button")
+        close_active_tab_button.state = NORMAL
 
     def create_log_text_box(self):
         # self.output_frame = Frame(master=self.lower_frame)
         # self.output_frame.pack(fill=BOTH, expand=True)
 
         self.text_box = ScrolledText(master=self.lower_frame)
-        self.text_box.pack(side=TOP, fill=BOTH, expand=True)
-        self.text_box.config(background="#000000", fg="#ffffff")
+        self.text_box.pack(side=TOP, fill=BOTH, expand=False, padx=(30, 30), pady=(30, 30))
+        self.text_box.config(background="#ffffff", fg="#000000", font=("Roboto", 10))
 
         sys.stdout = StdoutRedirector(self.text_box)
 

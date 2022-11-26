@@ -32,7 +32,7 @@ class Table(ctk.CTkFrame):
         self.data_frame = data_frame
         self.header_font = tkFont.Font(family="Microsoft Tai Le", size=16, weight=tkFont.BOLD)
         self.font = tkFont.Font(family="Microsoft Tai Le", size=14)
-        self.cell_text_left_offset = 2 #px
+        self.cell_text_left_offset = 6 #px
 
         self.rows = data_frame.shape[0]
         self.columns = data_frame.shape[1]
@@ -81,6 +81,7 @@ class Table(ctk.CTkFrame):
         self.draw_table()
         self.draw_table_text()
         self.bind_left_click()
+        self.bind_hover()
 
     def compute_column_widths(self):
         if self.fit_criterion == FitCriterion.FIT_HEADER:
@@ -200,8 +201,14 @@ class Table(ctk.CTkFrame):
     def bind_vertical_scroll(self):
         self.table_canvas.bind("<MouseWheel>", func=self.table_canvas.yview, add="+")
 
-    # get cell
-    def on_left_click(self, event):
+    def bind_hover(self):
+        self.table_canvas.bind("<Motion>", func=self.on_hover)
+
+    def on_hover(self, event):
+        cell = self.get_cell(event)
+        print(cell)
+
+    def get_cell(self, event):
         row = 0
         column = 0
 
@@ -217,7 +224,12 @@ class Table(ctk.CTkFrame):
             x += self.column_widths[column]
             column += 1
 
-        print(str((row, column)) + " " + str(self.vertical_scrollbar.get()))
+        return (row, column)
+
+    # get cell
+    def on_left_click(self, event):
+        cell = self.get_cell(event)
+        print(str((cell[0], cell[1])) + " " + str(self.vertical_scrollbar.get()))
 
     # both the header and the table must scroll simultaneously along the x-axis
     def horizontal_scroll(self, *args):

@@ -4,9 +4,15 @@ import pandas as pd
 import enum
 
 class FitCriterion(enum.Enum):
-    FIT_HEADER = 0
+    DEFAULT = 0
     FIT_COL_MAX_LENGTH = 1
-    DEFAULT = 2
+    FIT_HEADER = 2
+    FIT_HEADER_AND_COL_MAX_LENGTH = 3
+
+class Background(enum.Enum):
+    DEFAULT = 0
+    SELECT = 1
+    HOVER = 2
 
 class Table(ctk.CTkFrame):
     def __init__(self, master, data_frame: pd.DataFrame, header_height=30, row_height=20, fit_criterion=FitCriterion.DEFAULT, row_separator_width=1, column_separator_width=1):
@@ -36,6 +42,9 @@ class Table(ctk.CTkFrame):
 
         self.hover_row = None
         self.hover_row_color = "#e3f5ff"
+
+        self.selected_row = None
+        self.selected_row_color = "#e3ffe6"
 
         self.rows = data_frame.shape[0]
         self.columns = data_frame.shape[1]
@@ -94,6 +103,12 @@ class Table(ctk.CTkFrame):
             return self.compute_header_column_widths()
         elif self.fit_criterion == FitCriterion.FIT_COL_MAX_LENGTH:
             return self.compute_table_column_widths()
+        elif self.fit_criterion == FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH:
+            header_column_widths = self.compute_header_column_widths()
+            entries_column_widths = self.compute_table_column_widths()
+            
+            comparison = zip(header_column_widths, entries_column_widths)
+            return list(map(lambda e: max(e), comparison))
         else:
             return [self.default_column_width] * self.columns
 
@@ -151,7 +166,7 @@ class Table(ctk.CTkFrame):
             self.draw_row_background(row)
             self.draw_row_text(row)
 
-    def draw_row_background(self, row, hover=False):
+    def draw_row_background(self, row, background_type=Background.DEFAULT):
         y = row * (self.row_height + self.row_separator_width)
         self.table_canvas.create_rectangle(0, y,
                                                self.table_canvas.winfo_reqwidth(), y + self.row_separator_width,
@@ -160,8 +175,10 @@ class Table(ctk.CTkFrame):
 
         y += self.row_separator_width
 
-        if hover:
+        if background_type == Background.HOVER:
             color = self.hover_row_color
+        elif background_type == Background.SELECT:
+            color = self.selected_row_color
         elif row % 2 == 0:
             color = self.even_row_col
         else:
@@ -200,27 +217,54 @@ class Table(ctk.CTkFrame):
         return text
 
     def on_leave(self, event):
-        self.draw_row_background(self.hover_row, hover=False)
-        self.draw_row_text(self.hover_row)
-        self.hover_row = None
+        if self.hover_row == self.selected_row:
+            self.hover_row = None
+            return
+        if self.hover_row is not None:
+            self.draw_row_background(self.hover_row, background_type=Background.DEFAULT)
+            self.draw_row_text(self.hover_row)
+            self.hover_row = None
+        
 
     def on_hover(self, event):
         hover_row = self.get_cell(event)[0]
         previously_hovered_row = self.hover_row
         if hover_row == previously_hovered_row:
             return
-        # self.hover_row = hover_row
+        if hover_row == self.selected_row and previously_hovered_row is not None:
+            self.draw_row_background(previously_hovered_row, background_type=Background.DEFAULT)
+            self.draw_row_text(previously_hovered_row)
+            return
+        if hover_row == self.selected_row and previously_hovered_row is None:
+            return
 
-        self.draw_row_background(hover_row, hover=True)
+        self.draw_row_background(hover_row, background_type=Background.HOVER)
         self.draw_row_text(hover_row)
 
-        if previously_hovered_row is not None:
-            self.draw_row_background(previously_hovered_row, hover=False)
+        if previously_hovered_row is not None and previously_hovered_row != self.selected_row:
+            self.draw_row_background(previously_hovered_row, background_type=Background.DEFAULT)
             self.draw_row_text(previously_hovered_row)
 
         self.hover_row = hover_row
-        
-        print(hover_row)
+
+    def on_left_click(self, event):
+        new_selected_row = self.get_cell(event)[0]
+
+        if self.selected_row is None:
+            self.draw_row_background(new_selected_row, background_type=Background.SELECT)
+            self.draw_row_text(new_selected_row)
+            self.selected_row = new_selected_row
+        elif self.selected_row != new_selected_row: # switch to the newly selected row
+            self.draw_row_background(self.selected_row, background_type=Background.DEFAULT)
+            self.draw_row_text(self.selected_row)
+
+            self.draw_row_background(new_selected_row, background_type=Background.SELECT)
+            self.draw_row_text(new_selected_row)
+            self.selected_row = new_selected_row
+        else: # click on already selected row: deselect row
+            self.draw_row_background(new_selected_row, background_type=Background.HOVER)
+            self.draw_row_text(new_selected_row)
+            self.selected_row = None
 
     def get_cell(self, event):
         row = 0
@@ -239,10 +283,6 @@ class Table(ctk.CTkFrame):
             column += 1
 
         return (row - 1, column - 1)
-
-    def on_left_click(self, event):
-        cell = self.get_cell(event)
-        print(str((cell[0], cell[1])) + " " + str(self.vertical_scrollbar.get()))
 
     # both the header and the table must scroll simultaneously along the x-axis
     def horizontal_scroll(self, *args):
@@ -290,7 +330,12 @@ data_frame = pd.DataFrame(data=data_dict)
 root = ctk.CTk()
 root.title("Fancy table")
 
-table = Table(master=root, data_frame=data_frame, row_height=70, header_height=90, fit_criterion=FitCriterion.FIT_COL_MAX_LENGTH)
+table = Table(master=root,
+ data_frame=data_frame,
+  row_height=30,
+   header_height=40,
+    fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
+    row_separator_width=0)
 table.pack(expand=False, fill=ctk.BOTH)
 
 root.mainloop()

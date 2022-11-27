@@ -2,12 +2,14 @@ import sys
 from tkinter import *
 from tkinter import filedialog
 from tkinter.scrolledtext import ScrolledText
-from pandastable import Table, config
+# from pandastable import Table, config
 import tkinter.ttk as ttk
 import math
 import pandas
 import customtkinter as ctk
+from bootstraptable import Table, FitCriterion
 import tktooltip
+import pandas as pd
 
 
 class StdoutRedirector(object):
@@ -345,8 +347,7 @@ class GUI(object):
         self.planning_number += 1
 
         import_data_frame = pandas.read_excel(selected_file.name)
-        self.initialize_input_table(input_tab=input_tab,
-                                    data_frame=import_data_frame)
+        self.initialize_input_table(input_tab=input_tab, data_frame=import_data_frame)
 
     def export_callback(self):
         selected_filetype = StringVar()
@@ -419,52 +420,13 @@ class GUI(object):
         self.notebook.pack(expand=True, fill=BOTH, padx=(30, 30), pady=(30, 30))
 
     def initialize_input_table(self, input_tab, data_frame):
-        input_table = Table(parent=input_tab,
-                            cols=self.input_columns,
-                            rows=1,
-                            dataframe=data_frame,
-                            enable_menus=False,
-                            editable=False,
-                            showstatusbar=False)
-
-        input_table.model.df = input_table.model.df.rename(
-            columns=self.input_columns_translations)
-
-        options = {
-            "align": "w",
-            "cellwidth": 150,
-            "floatprecision": 2,
-            "font": "Microsoft Tai Le",
-            "fontsize": 10,
-            "rowheight": 20,
-            "colselectedcolor": "#c7deff",
-            "rowselectedcolor": "#c7deff",
-            "textcolor": "black",
-            "statusbar_font": ("Microsoft Tai Le", 10),
-            "statusbar_font_color": "#000000",
-        }
-        config.apply_options(options, input_table)
-
-        input_table.show()
-
-        input_table.columnwidths["Prestazioni"] = 600
-        input_table.columnwidths["Data inserimento in lista"] = 300
-
-        input_table.colheader.bgcolor = "#e8e8e8"
-        input_table.rowheader.bgcolor = "#e8e8e8"
-        input_table.rowindexheader.bgcolor = "#e8e8e8"
-
-        input_table.colheader.colselectedcolor = "#5e9cff"
-        input_table.rowheader.rowselectedcolor = "#5e9cff"
-
-        input_table.colheader.textcolor = "black"
-        input_table.rowheader.textcolor = "black"
-
-        # input_table.statusbar.sfont = ("Microsoft Tai Le", 10)
-        # input_table.statusbar.clr = "#000000"
-
-        # for avoiding the strange behavior of empty first imported table
-        input_table.redraw()
+        table = Table(master=input_tab,
+                data_frame=data_frame,
+                row_height=30,
+                header_height=40,
+                fit_criterion=FitCriterion.DEFAULT,
+                row_separator_width=1)
+        table.pack()
 
         close_active_tab_button = self.upper_frame.nametowidget("toolbar_frame.close_active_tab_button")
         close_active_tab_button.state = NORMAL

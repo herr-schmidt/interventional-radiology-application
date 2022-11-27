@@ -9,7 +9,7 @@ class FitCriterion(enum.Enum):
     DEFAULT = 2
 
 class Table(ctk.CTkFrame):
-    def __init__(self, master, data_frame: pd.DataFrame, header_height=30, row_height=20, fit_criterion=FitCriterion.DEFAULT, row_separator_width=0, column_separator_width=1):
+    def __init__(self, master, data_frame: pd.DataFrame, header_height=30, row_height=20, fit_criterion=FitCriterion.DEFAULT, row_separator_width=1, column_separator_width=1):
         """Constructs a Table for displaying data.
 
         Args:
@@ -33,6 +33,9 @@ class Table(ctk.CTkFrame):
         self.header_font = tkFont.Font(family="Microsoft Tai Le", size=16, weight=tkFont.BOLD)
         self.font = tkFont.Font(family="Microsoft Tai Le", size=14)
         self.cell_text_left_offset = 6 #px
+
+        self.hover_row = None
+        self.hover_row_color = "#e3f5ff"
 
         self.rows = data_frame.shape[0]
         self.columns = data_frame.shape[1]
@@ -79,9 +82,12 @@ class Table(ctk.CTkFrame):
         self.draw_header()
         self.draw_header_text()
         self.draw_table()
-        self.draw_table_text()
-        self.bind_left_click()
-        self.bind_hover()
+        self.do_bindings()
+
+    def do_bindings(self):
+        self.table_canvas.bind("<Button-1>", func=self.on_left_click)
+        self.table_canvas.bind("<Motion>", func=self.on_hover)
+        self.table_canvas.bind("<Leave>", func=self.on_leave)
 
     def compute_column_widths(self):
         if self.fit_criterion == FitCriterion.FIT_HEADER:
@@ -103,6 +109,7 @@ class Table(ctk.CTkFrame):
         return column_widths
 
     # compute column widths in order to fit the longest entry in each column
+    # if column label is shorter, it will be truncated
     def compute_table_column_widths(self):
         column_widths = []
         columns_labels = self.data_frame.columns.values
@@ -113,11 +120,6 @@ class Table(ctk.CTkFrame):
             column_widths.append(max(column_values_pixels))
 
         return column_widths
-
-
-
-
-
  
     def draw_header(self):
         self.header_canvas.create_rectangle(0, 0,
@@ -145,40 +147,44 @@ class Table(ctk.CTkFrame):
             x = x + self.column_widths[column]
 
     def draw_table(self):
-        y = 0
-        for i in range(0, self.rows):
+        for row in range(0, self.rows):
+            self.draw_row_background(row)
+            self.draw_row_text(row)
 
-            self.table_canvas.create_rectangle(0, y,
+    def draw_row_background(self, row, hover=False):
+        y = row * (self.row_height + self.row_separator_width)
+        self.table_canvas.create_rectangle(0, y,
                                                self.table_canvas.winfo_reqwidth(), y + self.row_separator_width,
                                                width=0,
                                                fill=self.separator_line_color)
 
-            y += self.row_separator_width
+        y += self.row_separator_width
 
-            if i % 2 == 0:
-                color = self.even_row_col
-            else:
-                color = self.odd_row_col
-            self.table_canvas.create_rectangle(0, y,
-                                               self.table_canvas.winfo_reqwidth(), y + self.row_height,
-                                               fill=color,
-                                               width=0)
-            y += self.row_height
+        if hover:
+            color = self.hover_row_color
+        elif row % 2 == 0:
+            color = self.even_row_col
+        else:
+            color = self.odd_row_col
 
-        # TODO: draw columns
+        self.table_canvas.create_rectangle(0, y,
+                                            self.table_canvas.winfo_reqwidth(), y + self.row_height,
+                                            fill=color,
+                                            width=0)
 
     def draw_table_text(self):
-        
-        y = self.row_separator_width + self.row_height / 2
         for row in range(0, self.rows):
-            x = self.cell_text_left_offset
-            row_elements = self.data_frame.iloc[row].values
-            for column in range(0, self.columns):
-                text = row_elements[column]
-                max_displayable_text = self.compute_max_displayable(text, column)
-                self.table_canvas.create_text((x, y), text=max_displayable_text, font=self.font, anchor=ctk.W)
-                x = x + self.column_widths[column]
-            y = y + self.row_height + self.row_separator_width
+            self.draw_row_text(row)
+
+    def draw_row_text(self, row):
+        y = (self.row_separator_width + self.row_height / 2) + (self.row_height + self.row_separator_width) * row
+        x = self.cell_text_left_offset
+        row_elements = self.data_frame.iloc[row].values
+        for column in range(0, self.columns):
+            text = row_elements[column]
+            max_displayable_text = self.compute_max_displayable(text, column)
+            self.table_canvas.create_text((x, y), text=max_displayable_text, font=self.font, anchor=ctk.W)
+            x = x + self.column_widths[column]
 
     def compute_max_displayable(self, text, column, header=False):
         if header:
@@ -192,21 +198,29 @@ class Table(ctk.CTkFrame):
             text = text[:-1] # remove last char
             text_width = font.measure(text)
         return text
-        
 
-
-    def bind_left_click(self):
-        self.table_canvas.bind("<Button-1>", func=self.on_left_click)
-
-    def bind_vertical_scroll(self):
-        self.table_canvas.bind("<MouseWheel>", func=self.table_canvas.yview, add="+")
-
-    def bind_hover(self):
-        self.table_canvas.bind("<Motion>", func=self.on_hover)
+    def on_leave(self, event):
+        self.draw_row_background(self.hover_row, hover=False)
+        self.draw_row_text(self.hover_row)
+        self.hover_row = None
 
     def on_hover(self, event):
-        cell = self.get_cell(event)
-        print(cell)
+        hover_row = self.get_cell(event)[0]
+        previously_hovered_row = self.hover_row
+        if hover_row == previously_hovered_row:
+            return
+        # self.hover_row = hover_row
+
+        self.draw_row_background(hover_row, hover=True)
+        self.draw_row_text(hover_row)
+
+        if previously_hovered_row is not None:
+            self.draw_row_background(previously_hovered_row, hover=False)
+            self.draw_row_text(previously_hovered_row)
+
+        self.hover_row = hover_row
+        
+        print(hover_row)
 
     def get_cell(self, event):
         row = 0
@@ -224,9 +238,8 @@ class Table(ctk.CTkFrame):
             x += self.column_widths[column]
             column += 1
 
-        return (row, column)
+        return (row - 1, column - 1)
 
-    # get cell
     def on_left_click(self, event):
         cell = self.get_cell(event)
         print(str((cell[0], cell[1])) + " " + str(self.vertical_scrollbar.get()))
@@ -269,6 +282,7 @@ data_dict = {'Ciaoooooooooo1': ["hello", "hello!", "HELLO!", "hello", "hello!", 
  'Ciaoooooooooo10sd': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
  'Ciaoooooooooo10g': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
  'Ciaoooooooooo10d': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
+ 'Ciaoooooooooo11d': ["c", "c!", "c!", "c", "c!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "c", "c", "c", "c", "c", "c", "c", "c"],
  'Ciaoooooooooo11': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],}
 data_frame = pd.DataFrame(data=data_dict)
 

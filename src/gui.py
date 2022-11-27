@@ -371,8 +371,8 @@ class GUI(object):
                 table = w
                 break
 
-        table.model.df.to_excel(file_name,
-                                header=list(table.model.df.columns),
+        table.data_frame.to_excel(file_name,
+                                header=list(table.data_frame.columns),
                                 index=False # avoid writing a column of indices
                                 )
 

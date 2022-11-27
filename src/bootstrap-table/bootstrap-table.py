@@ -133,7 +133,7 @@ class Table(ctk.CTkFrame):
         columns_labels = self.data_frame.columns.values
 
         for label in columns_labels:
-            column_values = data_frame[label].values
+            column_values = self.data_frame[label].values
             column_values_pixels = map(lambda e: self.font.measure(e) + self.cell_text_left_offset, column_values)
             column_widths.append(max(column_values_pixels))
 
@@ -304,35 +304,23 @@ class Table(ctk.CTkFrame):
                                        fill=ctk.X)
         self.vertical_scrollbar.pack(side=ctk.RIGHT,
                                      expand=False,
-                                     fill=ctk.Y)
-        self.header_canvas.pack(side=ctk.TOP, expand=True, fill=ctk.Y)
-        self.table_canvas.pack(side=ctk.TOP, expand=True, fill=ctk.Y)
+                                     fill=ctk.Y
+                                     )
+        self.header_canvas.pack(side=ctk.TOP, expand=False, fill=ctk.Y)
+        self.table_canvas.pack(side=ctk.TOP, expand=False, fill=ctk.Y)
 
         ctk.CTkFrame.pack(self, **kwargs)
 
+        self.update_idletasks()
 
 
-data_dict = {'Ciaoooooooooo1': ["hello", "hello!", "HELLO!", "hello", "hello!", "HELLO!", "hello", "hello!", "HELLO!", "hello", "hello!", "HELLO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo2': ["ciaooooooooooooooooooooooo", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo3': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo4': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo5': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo6': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo7': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo8': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo9': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo10': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo101': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo102': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo103': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo104': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo105': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo106': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo10sd': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo10g': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo10d': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],
- 'Ciaoooooooooo11d': ["c", "c!", "c!", "c", "c!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "c", "c", "c", "c", "c", "c", "c", "c"],
- 'Ciaoooooooooo11': ["ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciao", "ciao!", "CIAO!", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo", "ciaooooooooooo"],}
+data_dict = {"Colonna 1" : ["Mario", "Marco", "Giovanni"],
+             "Colonna 3" : ["Mario", "Marco", "Giovanni"],
+             "Colonna 4" : ["Mario", "Marco", "Giovanni"],
+             "Colonna 5" : ["Mario", "Marco", "Giovanni"],
+             "Colonna 6" : ["Mario", "Marco", "Giovanni"],
+             "Colonna 7" : ["Mario", "Marco", "Giovanni"],
+             "Colonna 8" : ["Mario", "Marco", "Giovanni"],}
 data_frame = pd.DataFrame(data=data_dict)
 
 
@@ -345,6 +333,6 @@ table = Table(master=root,
    header_height=40,
     fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
     row_separator_width=0)
-table.pack(expand=False, fill=ctk.BOTH)
+table.pack()
 
 root.mainloop()

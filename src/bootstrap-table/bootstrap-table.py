@@ -15,6 +15,9 @@ class Background(enum.Enum):
     HOVER = 2
 
 class Table(ctk.CTkFrame):
+
+    ROW_TAG_PREFIX = "row_"
+
     def __init__(self, master, data_frame: pd.DataFrame, header_height=30, row_height=20, fit_criterion=FitCriterion.DEFAULT, row_separator_width=1, column_separator_width=1):
         """Constructs a Table for displaying data.
 
@@ -36,8 +39,8 @@ class Table(ctk.CTkFrame):
                                                    orientation=ctk.VERTICAL)
 
         self.data_frame = data_frame
-        self.header_font = tkFont.Font(family="Microsoft Tai Le", size=16, weight=tkFont.BOLD)
-        self.font = tkFont.Font(family="Microsoft Tai Le", size=14)
+        self.header_font = tkFont.Font(family="Microsoft Tai Le", size=14, weight=tkFont.BOLD)
+        self.font = tkFont.Font(family="Microsoft Tai Le", size=12)
         self.cell_text_left_offset = 6 #px
 
         self.hover_row = None
@@ -69,7 +72,7 @@ class Table(ctk.CTkFrame):
                                            xscrollcommand=self.horizontal_scrollbar.set,
                                            width=self.table_canvas_width,
                                            height=self.header_height + 2 * self.row_separator_width,
-                                           scrollregion=(0, 0, self.table_canvas_width, self.header_height + 2 * self.row_separator_width),
+                                           scrollregion=(0, 0, self.table_canvas_width, 0),
                                            borderwidth=0,
                                            highlightthickness=0
                                            )
@@ -163,15 +166,25 @@ class Table(ctk.CTkFrame):
 
     def draw_table(self):
         for row in range(0, self.rows):
-            self.draw_row_background(row)
-            self.draw_row_text(row)
+            self.draw_row(row)
 
-    def draw_row_background(self, row, background_type=Background.DEFAULT):
+    def draw_row(self, row, background_type=Background.DEFAULT):
+        # delete by tag all objects associated to row, if they exist
+        # this prevents Tkinter from having to keep track of too many useless objects for the same row
+        row_tag = self.ROW_TAG_PREFIX + str(row)
+        self.table_canvas.delete(row_tag)
+
+        self.draw_row_background(row, background_type)
+        self.draw_row_text(row)
+
+    def draw_row_background(self, row, background_type):
+        row_tag = self.ROW_TAG_PREFIX + str(row)
         y = row * (self.row_height + self.row_separator_width)
         self.table_canvas.create_rectangle(0, y,
                                                self.table_canvas.winfo_reqwidth(), y + self.row_separator_width,
                                                width=0,
-                                               fill=self.separator_line_color)
+                                               fill=self.separator_line_color,
+                                               tags=row_tag)
 
         y += self.row_separator_width
 
@@ -187,20 +200,23 @@ class Table(ctk.CTkFrame):
         self.table_canvas.create_rectangle(0, y,
                                             self.table_canvas.winfo_reqwidth(), y + self.row_height,
                                             fill=color,
-                                            width=0)
+                                            width=0,
+                                            tags=row_tag)
 
     def draw_table_text(self):
         for row in range(0, self.rows):
             self.draw_row_text(row)
 
     def draw_row_text(self, row):
+        row_tag = self.ROW_TAG_PREFIX + str(row)
+
         y = (self.row_separator_width + self.row_height / 2) + (self.row_height + self.row_separator_width) * row
         x = self.cell_text_left_offset
         row_elements = self.data_frame.iloc[row].values
         for column in range(0, self.columns):
             text = row_elements[column]
             max_displayable_text = self.compute_max_displayable(text, column)
-            self.table_canvas.create_text((x, y), text=max_displayable_text, font=self.font, anchor=ctk.W)
+            self.table_canvas.create_text((x, y), text=max_displayable_text, font=self.font, anchor=ctk.W, tags=row_tag)
             x = x + self.column_widths[column]
 
     def compute_max_displayable(self, text, column, header=False):
@@ -221,29 +237,26 @@ class Table(ctk.CTkFrame):
             self.hover_row = None
             return
         if self.hover_row is not None:
-            self.draw_row_background(self.hover_row, background_type=Background.DEFAULT)
-            self.draw_row_text(self.hover_row)
+            self.draw_row(self.hover_row, background_type=Background.DEFAULT)
             self.hover_row = None
         
 
     def on_hover(self, event):
         hover_row = self.get_cell(event)[0]
         previously_hovered_row = self.hover_row
+
         if hover_row == previously_hovered_row:
             return
         if hover_row == self.selected_row and previously_hovered_row is not None:
-            self.draw_row_background(previously_hovered_row, background_type=Background.DEFAULT)
-            self.draw_row_text(previously_hovered_row)
+            self.draw_row(previously_hovered_row, background_type=Background.DEFAULT)
             return
         if hover_row == self.selected_row and previously_hovered_row is None:
             return
 
-        self.draw_row_background(hover_row, background_type=Background.HOVER)
-        self.draw_row_text(hover_row)
+        self.draw_row(hover_row, background_type=Background.HOVER)
 
         if previously_hovered_row is not None and previously_hovered_row != self.selected_row:
-            self.draw_row_background(previously_hovered_row, background_type=Background.DEFAULT)
-            self.draw_row_text(previously_hovered_row)
+            self.draw_row(previously_hovered_row, background_type=Background.DEFAULT)
 
         self.hover_row = hover_row
 
@@ -251,19 +264,15 @@ class Table(ctk.CTkFrame):
         new_selected_row = self.get_cell(event)[0]
 
         if self.selected_row is None:
-            self.draw_row_background(new_selected_row, background_type=Background.SELECT)
-            self.draw_row_text(new_selected_row)
+            self.draw_row(new_selected_row, background_type=Background.SELECT)
             self.selected_row = new_selected_row
         elif self.selected_row != new_selected_row: # switch to the newly selected row
-            self.draw_row_background(self.selected_row, background_type=Background.DEFAULT)
-            self.draw_row_text(self.selected_row)
+            self.draw_row(self.selected_row, background_type=Background.DEFAULT)
 
-            self.draw_row_background(new_selected_row, background_type=Background.SELECT)
-            self.draw_row_text(new_selected_row)
+            self.draw_row(new_selected_row, background_type=Background.SELECT)
             self.selected_row = new_selected_row
         else: # click on already selected row: deselect row
-            self.draw_row_background(new_selected_row, background_type=Background.HOVER)
-            self.draw_row_text(new_selected_row)
+            self.draw_row(new_selected_row, background_type=Background.HOVER)
             self.selected_row = None
 
     def get_cell(self, event):

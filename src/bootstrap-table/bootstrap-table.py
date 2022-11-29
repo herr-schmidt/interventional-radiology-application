@@ -18,7 +18,7 @@ class Table(ctk.CTkFrame):
 
     ROW_TAG_PREFIX = "row_"
 
-    def __init__(self, master, data_frame: pd.DataFrame, header_height=30, row_height=20, fit_criterion=FitCriterion.DEFAULT, row_separator_width=1, column_separator_width=1):
+    def __init__(self, master, data_frame: pd.DataFrame, header_height=30, row_height=20, fit_criterion=FitCriterion.DEFAULT, row_separator_width=1, column_separator_width=1, pagination_size=5):
         """Constructs a Table for displaying data.
 
         Args:
@@ -31,12 +31,12 @@ class Table(ctk.CTkFrame):
             row_separator_width (int, optional): Width of row separators. Defaults to 1.
             column_separator_width (int, optional): Width of column separators. Defaults to 1.
         """
-        super().__init__(master=master)
+        super().__init__(master=master, fg_color="gray95")
 
         self.horizontal_scrollbar = ctk.CTkScrollbar(master=self,
                                                      orientation=ctk.HORIZONTAL)
-        self.vertical_scrollbar = ctk.CTkScrollbar(master=self,
-                                                   orientation=ctk.VERTICAL)
+        # self.vertical_scrollbar = ctk.CTkScrollbar(master=self,
+        #                                            orientation=ctk.VERTICAL)
 
         self.data_frame = data_frame
         self.header_font = tkFont.Font(family="Microsoft Tai Le", size=14, weight=tkFont.BOLD)
@@ -51,6 +51,9 @@ class Table(ctk.CTkFrame):
 
         self.rows = data_frame.shape[0]
         self.columns = data_frame.shape[1]
+        self.pagination_size = pagination_size
+        self.current_page = 0
+        self.current_page_entry_var = ctk.IntVar(0)
         self.header_height = header_height
         self.header_color = "#ffffff"
         self.separator_line_color = "gray75"
@@ -66,7 +69,7 @@ class Table(ctk.CTkFrame):
         self.column_separator_width = column_separator_width
 
         self.table_canvas_width = sum(self.column_widths)
-        self.table_canvas_height = self.rows * (row_height + self.row_separator_width)
+        self.table_canvas_height = self.compute_current_height()
 
         self.header_canvas = ctk.CTkCanvas(master=self,
                                            xscrollcommand=self.horizontal_scrollbar.set,
@@ -79,7 +82,7 @@ class Table(ctk.CTkFrame):
 
         self.table_canvas = ctk.CTkCanvas(master=self,
                                           xscrollcommand=self.horizontal_scrollbar.set,
-                                          yscrollcommand=self.vertical_scrollbar.set,
+                                          # yscrollcommand=self.vertical_scrollbar.set,
                                           width=self.table_canvas_width,
                                           height=self.table_canvas_height,
                                           scrollregion=(0, 0, self.table_canvas_width, self.table_canvas_height),
@@ -88,7 +91,23 @@ class Table(ctk.CTkFrame):
                                           # yscrollincrement=3
                                           )
 
-        self.vertical_scrollbar.command = self.table_canvas.yview
+        self.lower_command_frame = ctk.CTkFrame(master=self,
+                                        width=self.table_canvas_width,
+                                          height=50,
+                                          corner_radius=0,
+                                          fg_color=self.header_color
+                                          )
+
+        self.next_button_color = "gray85"
+        self.prev_button_color = "gray85"
+
+        self.next_page_button = ctk.CTkButton(master=self.lower_command_frame, text="next", fg_color=self.next_button_color, width=60, command=self.next_page)
+        self.previous_page_button = ctk.CTkButton(master=self.lower_command_frame, text="prev", fg_color=self.prev_button_color, width=60, command=self.previous_page)
+
+        self.page_number_entry = ctk.CTkEntry(master=self.lower_command_frame, textvariable=self.current_page_entry_var, width=40,
+                                            border_color="gray75", border_width=1)
+
+        # self.vertical_scrollbar.command = self.table_canvas.yview
         self.horizontal_scrollbar.command = self.horizontal_scroll
 
         self.draw_header()
@@ -100,6 +119,27 @@ class Table(ctk.CTkFrame):
         self.table_canvas.bind("<Button-1>", func=self.on_left_click)
         self.table_canvas.bind("<Motion>", func=self.on_hover)
         self.table_canvas.bind("<Leave>", func=self.on_leave)
+
+    def next_page(self):
+        self.current_page += 1
+        self.table_canvas.delete("all")
+        self.selected_row = None
+        self.hover_row = None
+        self.draw_table()
+
+    def previous_page(self):
+        self.current_page -= 1
+        self.table_canvas.delete("all")
+        self.selected_row = None
+        self.hover_row = None
+        self.draw_table()
+
+    # table canvas height based on current page
+    def compute_current_height(self):
+        df_rows = self.get_current_page_rows()
+
+        return len(df_rows) * (self.row_height + self.row_separator_width)
+
 
     def compute_column_widths(self):
         if self.fit_criterion == FitCriterion.FIT_HEADER:
@@ -131,6 +171,10 @@ class Table(ctk.CTkFrame):
     def compute_table_column_widths(self):
         column_widths = []
         columns_labels = self.data_frame.columns.values
+
+        # no data in dataframe
+        if self.data_frame.size == 0:
+            return [0] * self.columns
 
         for label in columns_labels:
             column_values = self.data_frame[label].values
@@ -164,22 +208,34 @@ class Table(ctk.CTkFrame):
             self.header_canvas.create_text((x, y), text=max_displayable_text, font=self.header_font, anchor=ctk.W)
             x = x + self.column_widths[column]
 
-    def draw_table(self):
-        for row in range(0, self.rows):
-            self.draw_row(row)
+    def get_current_page_rows(self):
+        first_row = self.current_page * self.pagination_size
+        last_row = self.pagination_size * (self.current_page + 1)
 
-    def draw_row(self, row, background_type=Background.DEFAULT):
+        return self.data_frame[first_row:last_row].values
+
+    def draw_table(self):
+        self.table_canvas_height = self.compute_current_height()
+        self.table_canvas.config(height=self.table_canvas_height,
+                                 scrollregion=(0, 0, self.table_canvas_width, self.table_canvas_height))
+
+        df_rows = self.get_current_page_rows()
+        for absolute_row in range(self.current_page * self.pagination_size, self.current_page * self.pagination_size + len(df_rows)):
+            self.draw_row(absolute_row)
+
+    def draw_row(self, absolute_row, background_type=Background.DEFAULT):
         # delete by tag all objects associated to row, if they exist
         # this prevents Tkinter from having to keep track of too many useless objects for the same row
-        row_tag = self.ROW_TAG_PREFIX + str(row)
+        row_tag = self.ROW_TAG_PREFIX + str(absolute_row)
         self.table_canvas.delete(row_tag)
 
-        self.draw_row_background(row, background_type)
-        self.draw_row_text(row)
+        self.draw_row_background(absolute_row, background_type)
+        self.draw_row_text(absolute_row)
 
-    def draw_row_background(self, row, background_type):
-        row_tag = self.ROW_TAG_PREFIX + str(row)
-        y = row * (self.row_height + self.row_separator_width)
+    def draw_row_background(self, absolute_row, background_type):
+        row_tag = self.ROW_TAG_PREFIX + str(absolute_row)
+        relative_row = absolute_row % self.pagination_size
+        y = relative_row * (self.row_height + self.row_separator_width)
         self.table_canvas.create_rectangle(0, y,
                                                self.table_canvas.winfo_reqwidth(), y + self.row_separator_width,
                                                width=0,
@@ -192,7 +248,7 @@ class Table(ctk.CTkFrame):
             color = self.hover_row_color
         elif background_type == Background.SELECT:
             color = self.selected_row_color
-        elif row % 2 == 0:
+        elif relative_row % 2 == 0:
             color = self.even_row_col
         else:
             color = self.odd_row_col
@@ -203,16 +259,13 @@ class Table(ctk.CTkFrame):
                                             width=0,
                                             tags=row_tag)
 
-    def draw_table_text(self):
-        for row in range(0, self.rows):
-            self.draw_row_text(row)
+    def draw_row_text(self, absolute_row):
+        row_tag = self.ROW_TAG_PREFIX + str(absolute_row)
+        relative_row = absolute_row % self.pagination_size
 
-    def draw_row_text(self, row):
-        row_tag = self.ROW_TAG_PREFIX + str(row)
-
-        y = (self.row_separator_width + self.row_height / 2) + (self.row_height + self.row_separator_width) * row
+        y = (self.row_separator_width + self.row_height / 2) + (self.row_height + self.row_separator_width) * relative_row
         x = self.cell_text_left_offset
-        row_elements = self.data_frame.iloc[row].values
+        row_elements = self.data_frame.iloc[absolute_row].values
         for column in range(0, self.columns):
             text = row_elements[column]
             max_displayable_text = self.compute_max_displayable(text, column)
@@ -242,7 +295,8 @@ class Table(ctk.CTkFrame):
         
 
     def on_hover(self, event):
-        hover_row = self.get_cell(event)[0]
+        hover_row = self.get_cell(event)[0] + self.current_page * self.pagination_size
+        print(hover_row)
         previously_hovered_row = self.hover_row
 
         if hover_row == previously_hovered_row:
@@ -261,7 +315,8 @@ class Table(ctk.CTkFrame):
         self.hover_row = hover_row
 
     def on_left_click(self, event):
-        new_selected_row = self.get_cell(event)[0]
+        new_selected_row = self.get_cell(event)[0] + self.current_page * self.pagination_size
+        print(new_selected_row)
 
         if self.selected_row is None:
             self.draw_row(new_selected_row, background_type=Background.SELECT)
@@ -279,19 +334,20 @@ class Table(ctk.CTkFrame):
         row = 0
         column = 0
 
-        vertical_scrollbar_offset = self.table_canvas.winfo_reqheight() * self.vertical_scrollbar.get()[0]
+        # vertical_scrollbar_offset = self.table_canvas.winfo_reqheight() * self.vertical_scrollbar.get()[0]
         horizontal_scrollbar_offset = self.table_canvas.winfo_reqwidth() * self.horizontal_scrollbar.get()[0]
 
-        y = 0
-        x = 0
-        while y < event.y + vertical_scrollbar_offset:
+        y = self.row_height + self.row_separator_width
+        x = self.column_widths[column]
+        
+        while y < event.y: # + vertical_scrollbar_offset:
             y += self.row_height + self.row_separator_width
             row += 1
         while x < event.x + horizontal_scrollbar_offset:
             x += self.column_widths[column]
             column += 1
 
-        return (row - 1, column - 1)
+        return (row, column)
 
     # both the header and the table must scroll simultaneously along the x-axis
     def horizontal_scroll(self, *args):
@@ -302,25 +358,33 @@ class Table(ctk.CTkFrame):
         self.horizontal_scrollbar.pack(side=ctk.BOTTOM,
                                        expand=False,
                                        fill=ctk.X)
-        self.vertical_scrollbar.pack(side=ctk.RIGHT,
-                                     expand=False,
-                                     fill=ctk.Y
-                                     )
+        # self.vertical_scrollbar.pack(side=ctk.RIGHT,
+        #                              expand=False,
+        #                              fill=ctk.Y
+        #                              )
         self.header_canvas.pack(side=ctk.TOP, expand=False, fill=ctk.Y)
         self.table_canvas.pack(side=ctk.TOP, expand=False, fill=ctk.Y)
+
+        self.lower_command_frame.pack(side=ctk.BOTTOM, expand=False, fill=ctk.X)
+
+        self.page_number_entry.pack(side=ctk.RIGHT, anchor=ctk.E)
+        self.next_page_button.pack(side=ctk.RIGHT, anchor=ctk.E)
+        self.previous_page_button.pack(side=ctk.RIGHT, anchor=ctk.W)
+
+        
 
         ctk.CTkFrame.pack(self, **kwargs)
 
         self.update_idletasks()
 
 
-data_dict = {"Colonna 1" : ["Mario", "Marco", "Giovanni"],
-             "Colonna 3" : ["Mario", "Marco", "Giovanni"],
-             "Colonna 4" : ["Mario", "Marco", "Giovanni"],
-             "Colonna 5" : ["Mario", "Marco", "Giovanni"],
-             "Colonna 6" : ["Mario", "Marco", "Giovanni"],
-             "Colonna 7" : ["Mario", "Marco", "Giovanni"],
-             "Colonna 8" : ["Mario", "Marco", "Giovanni"],}
+data_dict = {"Colonna 1" : ["1", "2", "3","4", "5", "6","7", "8", "9","10", "11", "12"],
+             "Colonna 3" : ["1", "2", "3","4", "5", "6","7", "8", "9","10", "11", "12"],
+             "Colonna 4" : ["1", "2", "3","4", "5", "6","7", "8", "9","10", "11", "12"],
+             "Colonna 5" : ["1", "2", "3","4", "5", "6","7", "8", "9","10", "11", "12"],
+             "Colonna 6" : ["1", "2", "3","4", "5", "6","7", "8", "9","10", "11", "12"],
+             "Colonna 7" : ["1", "2", "3","4", "5", "6","7", "8", "9","10", "11", "12"],
+             "Colonna 8" : ["1", "2", "3","4", "5", "6","7", "8", "9","10", "11", "12"],}
 data_frame = pd.DataFrame(data=data_dict)
 
 
@@ -330,9 +394,9 @@ root.title("Fancy table")
 table = Table(master=root,
  data_frame=data_frame,
   row_height=30,
-   header_height=40,
+   header_height=70,
     fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
-    row_separator_width=0)
+    row_separator_width=1)
 table.pack()
 
 root.mainloop()

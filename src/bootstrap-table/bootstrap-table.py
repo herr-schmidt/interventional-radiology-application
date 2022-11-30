@@ -21,8 +21,10 @@ class Background(enum.Enum):
 class Table(ctk.CTkFrame):
 
     ROW_TAG_PREFIX = "row_"
+    EMPTY_SPACE_TAG_PREFIX = "empty_"
+    FOOTER_SEPARATOR_TAG_PREFIX = "footer_"
 
-    def __init__(self, master, data_frame: pd.DataFrame, header_height=30, row_height=20, fit_criterion=FitCriterion.DEFAULT, row_separator_width=1, column_separator_width=1, pagination_size=5):
+    def __init__(self, master, data_frame: pd.DataFrame, header_height=30, row_height=20, fit_criterion=FitCriterion.DEFAULT, footer_separator_width=1, row_separator_width=1, column_separator_width=1, pagination_size=5):
         """Constructs a Table for displaying data.
 
         Args:
@@ -43,10 +45,10 @@ class Table(ctk.CTkFrame):
         #                                            orientation=ctk.VERTICAL)
 
         self.data_frame = data_frame
-        self.header_font = tkFont.Font(
-            family="Microsoft Tai Le", size=14, weight=tkFont.BOLD)
+        self.header_font = tkFont.Font(family="Microsoft Tai Le Bold", size=12)
         self.font = tkFont.Font(family="Microsoft Tai Le", size=12)
-        self.cell_text_left_offset = 6  # px
+        self.page_label_font = tkFont.Font(family="Microsoft Tai Le", size=10)
+        self.cell_text_left_offset = 6 # px
 
         self.hover_row = None
         self.hover_row_color = "#e3f5ff"
@@ -58,8 +60,8 @@ class Table(ctk.CTkFrame):
         self.columns = data_frame.shape[1]
         self.pagination_size = pagination_size
         self.current_page = 0
-        self.current_page_entry_var = ctk.IntVar()
-        self.current_page_entry_var.initialize(1)
+        self.current_page_label_var = ctk.IntVar()
+        self.current_page_label_var.initialize(1)
         self.header_height = header_height
         self.header_color = "#ffffff"
         self.separator_line_color = "gray75"
@@ -70,11 +72,13 @@ class Table(ctk.CTkFrame):
         self.even_row_col = "#f2f2f2"
         self.odd_row_col = "#ffffff"
 
+        self.footer_separator_width = footer_separator_width
+
         self.row_separator_width = row_separator_width
         self.column_separator_width = column_separator_width
 
         self.table_canvas_width = sum(self.column_widths)
-        self.table_canvas_height = self.compute_current_height()
+        self.table_canvas_height = self.compute_canvas_height()
 
         self.header_canvas = ctk.CTkCanvas(master=self,
                                            xscrollcommand=self.horizontal_scrollbar.set,
@@ -144,11 +148,27 @@ class Table(ctk.CTkFrame):
                                               height=32,
                                               command=self.last_page)
 
-        self.page_number_entry = ctk.CTkEntry(master=self.lower_command_frame,
-                                              textvariable=self.current_page_entry_var,
+        self.page_number_label = ctk.CTkLabel(master=self.lower_command_frame,
+                                              textvariable=self.current_page_label_var,
                                               width=40,
-                                              border_color="gray75",
-                                              border_width=1)
+                                              text_font=self.page_label_font)
+                                              # border_color="gray75",
+                                              # border_width=1)
+
+        # self.pagination_combo_text = ctk.StringVar()
+        # self.pagination_combo_text.initialize(str(self.pagination_size))
+        # 
+        # self.pagination_combo = ctk.CTkComboBox(master=self.lower_command_frame,
+        #                                         variable=self.pagination_combo_text,
+        #                                         values=["5", "10", "25", "50", "100"],
+        #                                         border_width=1,
+        #                                         height=50,
+        #                                         fg_color=self.header_color,
+        #                                         bg_color=self.header_color,
+        #                                         border_color=self.header_color,
+        #                                         button_color=self.header_color,
+        #                                         button_hover_color=self.navigation_buttons_hover_color
+        #                                         )
 
         # self.vertical_scrollbar.command = self.table_canvas.yview
         self.horizontal_scrollbar.command = self.horizontal_scroll
@@ -165,7 +185,7 @@ class Table(ctk.CTkFrame):
 
     def first_page(self):
         self.current_page = 0
-        self.current_page_entry_var.set(self.current_page + 1)
+        self.current_page_label_var.set(self.current_page + 1)
         self.table_canvas.delete("all")
         self.selected_row = None
         self.hover_row = None
@@ -173,7 +193,7 @@ class Table(ctk.CTkFrame):
 
     def last_page(self):
         self.current_page = self.compute_last_page_index()
-        self.current_page_entry_var.set(self.current_page + 1)
+        self.current_page_label_var.set(self.current_page + 1)
         self.table_canvas.delete("all")
         self.selected_row = None
         self.hover_row = None
@@ -186,7 +206,7 @@ class Table(ctk.CTkFrame):
         if self.current_page == self.compute_last_page_index():
             return
         self.current_page += 1
-        self.current_page_entry_var.set(self.current_page + 1)
+        self.current_page_label_var.set(self.current_page + 1)
         self.table_canvas.delete("all")
         self.selected_row = None
         self.hover_row = None
@@ -196,17 +216,16 @@ class Table(ctk.CTkFrame):
         if self.current_page == 0:
             return
         self.current_page -= 1
-        self.current_page_entry_var.set(self.current_page + 1)
+        self.current_page_label_var.set(self.current_page + 1)
         self.table_canvas.delete("all")
         self.selected_row = None
         self.hover_row = None
         self.draw_table()
 
-    # table canvas height based on current page
-    def compute_current_height(self):
+    def compute_canvas_height(self):
         df_rows = self.get_current_page_rows()
 
-        return len(df_rows) * (self.row_height + self.row_separator_width)
+        return len(df_rows) * (self.row_height + self.row_separator_width) + self.footer_separator_width
 
     def compute_column_widths(self):
         if self.fit_criterion == FitCriterion.FIT_HEADER:
@@ -286,15 +305,41 @@ class Table(ctk.CTkFrame):
         return self.data_frame[first_row:last_row].values
 
     def draw_table(self):
-        self.table_canvas_height = self.compute_current_height()
-        self.table_canvas.config(height=self.table_canvas_height,
-                                 scrollregion=(0, 0, self.table_canvas_width, self.table_canvas_height))
-
         df_rows = self.get_current_page_rows()
         for absolute_row in range(self.current_page * self.pagination_size, self.current_page * self.pagination_size + len(df_rows)):
             self.draw_row(absolute_row)
 
-        # TODO: fill empty space with default background
+        # fill empty space with default background
+        if len(df_rows) < self.pagination_size:
+            self.fill_empty_space(len(df_rows))
+
+        self.draw_footer_separator()
+
+    def draw_footer_separator(self):
+        footer_separator_tag = self.FOOTER_SEPARATOR_TAG_PREFIX
+        self.table_canvas.delete(footer_separator_tag)
+
+        y = (self.row_separator_width + self.row_height) * self.pagination_size
+        y_bottom = (self.row_separator_width + self.row_height) * self.pagination_size + self.footer_separator_width
+
+        self.table_canvas.create_rectangle(0, y,
+                                           self.table_canvas.winfo_reqwidth(), y + y_bottom,
+                                           width=0,
+                                           fill=self.separator_line_color,
+                                           tags=footer_separator_tag)
+
+    def fill_empty_space(self, last_page_rows):
+        empty_space_tag = self.EMPTY_SPACE_TAG_PREFIX
+        self.table_canvas.delete(empty_space_tag)
+
+        y = (self.row_separator_width + self.row_height) * last_page_rows
+        y_bottom = (self.row_separator_width + self.row_height) * self.pagination_size
+
+        self.table_canvas.create_rectangle(0, y,
+                                           self.table_canvas.winfo_reqwidth(), y + y_bottom,
+                                           width=0,
+                                           fill=self.header_color,
+                                           tags=empty_space_tag)
 
 
     def draw_row(self, absolute_row, background_type=Background.DEFAULT):
@@ -373,11 +418,14 @@ class Table(ctk.CTkFrame):
         hover_row = self.get_cell(event)[0] + self.current_page * self.pagination_size
         previously_hovered_row = self.hover_row
 
+        # when on last page we do not want to hover on a non-existing line (empty space)
+        if hover_row >= self.data_frame.shape[0]:
+            return
+
         if hover_row == previously_hovered_row:
             return
         if hover_row == self.selected_row and previously_hovered_row is not None:
-            self.draw_row(previously_hovered_row,
-                          background_type=Background.DEFAULT)
+            self.draw_row(previously_hovered_row, background_type=Background.DEFAULT)
             return
         if hover_row == self.selected_row and previously_hovered_row is None:
             return
@@ -392,6 +440,10 @@ class Table(ctk.CTkFrame):
 
     def on_left_click(self, event):
         new_selected_row = self.get_cell(event)[0] + self.current_page * self.pagination_size
+
+        # when on last page we do not want to select a non-existing line (empty space)
+        if new_selected_row >= self.data_frame.shape[0]:
+            return
 
         if self.selected_row is None:
             self.draw_row(new_selected_row, background_type=Background.SELECT)
@@ -439,29 +491,33 @@ class Table(ctk.CTkFrame):
         #                              fill=ctk.Y
         #                              )
         self.header_canvas.pack(side=ctk.TOP, expand=False, fill=ctk.Y)
-        self.table_canvas.pack(side=ctk.TOP, expand=False, fill=ctk.Y)
 
-        self.lower_command_frame.pack(side=ctk.BOTTOM, expand=False, fill=ctk.X, ipady=(5))
+        self.lower_command_frame.pack(side=ctk.BOTTOM, expand=False, fill=ctk.X)
 
         self.last_page_button.pack(side=ctk.RIGHT, anchor=ctk.E, padx=(0, 10))
         self.next_page_button.pack(side=ctk.RIGHT, anchor=ctk.E)
         self.previous_page_button.pack(side=ctk.RIGHT, anchor=ctk.W)
         self.first_page_button.pack(side=ctk.RIGHT, anchor=ctk.W)
 
-        self.page_number_entry.pack(side=ctk.RIGHT, anchor=ctk.W, padx=(0, 40))
+        self.page_number_label.pack(side=ctk.RIGHT, anchor=ctk.W, padx=(0, 40), pady=(1, 0))
+        # self.pagination_combo.pack(side=ctk.RIGHT, anchor=ctk.W, padx=(0, 40), pady=(1, 0))
+
+        self.table_canvas.pack(side=ctk.TOP, expand=False, fill=ctk.Y)
+
+
 
         ctk.CTkFrame.pack(self, **kwargs)
 
         self.update_idletasks()
 
 
-data_dict = {"Colonna 1": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-             "Colonna 3": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-             "Colonna 4": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-             "Colonna 5": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-             "Colonna 6": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-             "Colonna 7": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-             "Colonna 8": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"], }
+data_dict = {"Colonna 1": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+             "Colonna 2": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+             "Colonna 3": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+             "Colonna 4": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+             "Colonna 5": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+             "Colonna 6": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+             "Colonna 7": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"], }
 data_frame = pd.DataFrame(data=data_dict)
 
 
@@ -473,7 +529,8 @@ table = Table(master=root,
               row_height=30,
               header_height=70,
               fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
-              row_separator_width=1)
+              row_separator_width=1,
+              pagination_size=20)
 table.pack()
 
 root.mainloop()

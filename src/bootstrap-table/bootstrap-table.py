@@ -5,7 +5,7 @@ import customtkinter as ctk
 import tkinter.font as tkFont
 import pandas as pd
 import enum
-from math import ceil
+from math import ceil, floor
 
 class FitCriterion(enum.Enum):
     DEFAULT = 0
@@ -26,7 +26,7 @@ class Table(tk.Frame):
     EMPTY_SPACE_TAG_PREFIX = "empty_"
     FOOTER_SEPARATOR_TAG_PREFIX = "footer_"
 
-    def __init__(self, master, data_frame: pd.DataFrame, header_height=30, row_height=20, fit_criterion=FitCriterion.DEFAULT, footer_height=50, footer_separator_width=1, row_separator_width=1, column_separator_width=0, pagination_size=5):
+    def __init__(self, master, width, data_frame: pd.DataFrame, header_height=30, row_height=20, fit_criterion=FitCriterion.DEFAULT, footer_height=50, footer_separator_width=1, row_separator_width=1, column_separator_width=0, pagination_size=5):
         """Constructs a Table for displaying data.
 
         Args:
@@ -39,7 +39,7 @@ class Table(tk.Frame):
             row_separator_width (int, optional): Width of row separators. Defaults to 1.
             column_separator_width (int, optional): Width of column separators. Defaults to 1.
         """
-        super().__init__(master=master)
+        super().__init__(master=master, width=width)
 
         self.horizontal_scrollbar = tk.Scrollbar(master=self,
                                                      orient=ctk.HORIZONTAL)
@@ -256,18 +256,31 @@ class Table(tk.Frame):
         return len(df_rows) * (self.row_height + self.row_separator_width) + self.footer_separator_width
 
     def compute_column_widths(self):
+        column_widths = []
+
         if self.fit_criterion == FitCriterion.FIT_HEADER:
-            return self.compute_header_column_widths()
+            column_widths = self.compute_header_column_widths()
         elif self.fit_criterion == FitCriterion.FIT_COL_MAX_LENGTH:
-            return self.compute_table_column_widths()
+            column_widths = self.compute_table_column_widths()
         elif self.fit_criterion == FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH:
             header_column_widths = self.compute_header_column_widths()
             entries_column_widths = self.compute_table_column_widths()
 
             comparison = zip(header_column_widths, entries_column_widths)
-            return list(map(lambda e: max(e), comparison))
+            column_widths = list(map(lambda e: max(e), comparison))
         else:
-            return [self.default_column_width] * self.columns
+            column_widths = [self.default_column_width] * self.columns
+
+        self.update_idletasks()
+        requested_width = self.winfo_reqwidth()
+        available_width = requested_width - sum(column_widths)
+        
+        if available_width > 0:
+            pad = floor(available_width / self.columns)
+        else:
+            pad = 0
+
+        return [col + pad for col in column_widths]
 
     # compute column widths in order to fit each one of the header's labels
     def compute_header_column_widths(self):

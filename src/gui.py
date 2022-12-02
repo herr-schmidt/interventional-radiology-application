@@ -2,8 +2,6 @@ import sys
 import tkinter as tk
 from PIL import Image
 from tkinter import filedialog
-import tkinter.ttk as ttk
-import math
 import pandas
 import customtkinter as ctk
 from bootstraptable import Table, FitCriterion
@@ -31,7 +29,7 @@ class EntryWithLabel(ctk.CTkFrame):
         self.entry_variable = tk.StringVar()
         self.entry = ctk.CTkEntry(master=self, textvariable=self.entry_variable, width=entry_width, border_width=1, border_color="gray90")
 
-        self.label = ctk.CTkLabel(master=self, text=label_text, width=label_width, anchor=tk.W, fg_color="#ffffff", font=("Microsoft Tai Le", 10))
+        self.label = ctk.CTkLabel(master=self, text=label_text, width=label_width, anchor=tk.W, fg_color="#ffffff", font=("Source Sans Pro", 14))
 
         self.label.pack(side=tk.TOP, anchor=tk.W)
         self.entry.pack(side=tk.LEFT)
@@ -44,18 +42,18 @@ class InsertionDialog():
 
         dialog_frame = ctk.CTkFrame(master=self.dialog, width=100, height=100, fg_color="#ffffff")
 
-        registry_label = ctk.CTkLabel(master=dialog_frame, text="Anagrafica", font=("Microsoft Tai Le", 12), width=10)
+        registry_label = ctk.CTkLabel(master=dialog_frame, text="Anagrafica", font=("Source Sans Pro", 16), width=10)
         name_entry = EntryWithLabel(dialog_frame, "Nome")
         surname_entry = EntryWithLabel(dialog_frame, "Cognome")
 
-        planning_label = ctk.CTkLabel(master=dialog_frame, text="Pianificazione", font=("Microsoft Tai Le", 12), width=14)
+        planning_label = ctk.CTkLabel(master=dialog_frame, text="Pianificazione", font=("Source Sans Pro", 16), width=14)
         waiting_list_date_entry = EntryWithLabel(dialog_frame, "Inserimento in lista d'attesa", label_width=24)
 
         anesthesia = tk.BooleanVar(False)
         infections = tk.BooleanVar(False)
 
-        anesthesia_checkbox = ctk.CTkCheckBox(master=dialog_frame, variable=anesthesia, border_color="gray90", border_width=1, hover=False, text="Anestesia", font=("Microsoft Tai Le", 10), checkmark_color="#ffffff", fg_color="#287cfa")
-        infections_checkbox = ctk.CTkCheckBox(master=dialog_frame, variable=infections, border_color="gray90", border_width=1, hover=False, text="Infezioni in atto", font=("Microsoft Tai Le", 10), checkmark_color="#ffffff", fg_color="#287cfa")
+        anesthesia_checkbox = ctk.CTkCheckBox(master=dialog_frame, variable=anesthesia, border_color="gray90", border_width=1, hover=False, text="Anestesia", font=("Source Sans Pro", 14), checkmark_color="#ffffff", fg_color="#287cfa")
+        infections_checkbox = ctk.CTkCheckBox(master=dialog_frame, variable=infections, border_color="gray90", border_width=1, hover=False, text="Infezioni in atto", font=("Source Sans Pro", 14), checkmark_color="#ffffff", fg_color="#287cfa")
 
         dialog_frame.pack()
 
@@ -105,11 +103,10 @@ class GUI(object):
             "e": "Infezioni",
             "f": "Data inserimento in lista",
         }
-        self.icons = []
-        self.tooltips = []
         self.dialogs = []
 
         self.planning_number = 0
+        self.tabs = 0
 
         self.initializeUI()
 
@@ -126,84 +123,52 @@ class GUI(object):
         self.summary_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False, padx=(5, 10), pady=(10, 10))
 
     def create_toolbar(self):
-        toolbar_icon_sampling_X = 20
-        toolbar_icon_sampling_Y = 20
 
-        self.add_toolbar_button(
-            toolbar_icon_sampling_X,
-            toolbar_icon_sampling_Y,
+        self.create_toolbar_button(
             "resources/new-document.png",
-            "new_button",
             self.new_planning_callback,
-            text="Nuova scheda",
+            text="Nuova scheda"
         )
-        self.add_toolbar_button(
-            toolbar_icon_sampling_X,
-            toolbar_icon_sampling_Y,
+        self.create_toolbar_button(
             "resources/xlsx-file-format-extension.png",
-            "open_button",
             self.import_callback,
             text="Importa...",
         )
-        self.add_toolbar_button(
-            toolbar_icon_sampling_X,
-            toolbar_icon_sampling_Y,
+        self.create_toolbar_button(
             "resources/floppy-disk.png",
-            "save_button",
             self.export_callback,
             text="Salva",
         )
-        self.add_toolbar_button(
-            toolbar_icon_sampling_X,
-            toolbar_icon_sampling_Y,
-            "resources/bin.png",
-            "close_active_tab_button",
-            self.close_active_tab,
-            text="Chiudi scheda attiva",
-            state=tk.DISABLED,
-        )
+        self.close_tab_button = self.create_toolbar_button(
+                                    "resources/bin.png",
+                                    self.close_active_tab,
+                                    text="Chiudi scheda attiva",
+                                    state=tk.DISABLED,
+                                )
 
-        separator = ttk.Separator(master=self.toolbar_frame, orient="horizontal")
-        separator.pack(side=tk.TOP, padx=(5, 5), pady=(5, 5), fill=tk.X)
-
-        self.add_toolbar_button(
-            toolbar_icon_sampling_X,
-            toolbar_icon_sampling_Y,
+        self.create_toolbar_button(
             "resources/add-user.png",
-            self.ADD_PATIENT_BUTTON,
             self.add_patient,
             text="Aggiungi paziente",
             state=tk.NORMAL,
         )
 
-        self.add_toolbar_button(
-            toolbar_icon_sampling_X,
-            toolbar_icon_sampling_Y,
+        self.create_toolbar_button(
             "resources/editing.png",
-            self.EDIT_PATIENT_BUTTON,
             self.edit_patient,
             text="Modifica paziente",
             state=tk.NORMAL,
         )
 
-        separator = ttk.Separator(master=self.toolbar_frame, orient="horizontal")
-        separator.pack(side=tk.TOP, padx=(5, 5), pady=(5, 5), fill=tk.X)
-
-        self.add_toolbar_button(
-            toolbar_icon_sampling_X,
-            toolbar_icon_sampling_Y,
+        self.create_toolbar_button(
             "resources/play-button.png",
-            "play_button",
             self.launch_solver,
             text="Calcola pianificazione",
             state=tk.NORMAL,
         )
 
-        self.add_toolbar_button(
-            toolbar_icon_sampling_X,
-            toolbar_icon_sampling_Y,
+        self.create_toolbar_button(
             "resources/stop-button.png",
-            "stop_button",
             self.stop_solver,
             text="Interrompi pianificazione",
             state=tk.NORMAL,
@@ -215,40 +180,32 @@ class GUI(object):
     def stop_solver(self):
         pass
 
-    def add_toolbar_button(
+    def create_toolbar_button(
         self,
-        x_subsample,
-        y_subsample,
         icon_path,
-        button_name,
         command,
         text=None,
-        state=tk.NORMAL,
+        state=tk.NORMAL
     ):
         icon = ctk.CTkImage(Image.open(icon_path))
 
-        # to avoid garbage collection of a PhotoImage we need to keep a reference to it
-        self.icons.append(icon)
         button = ctk.CTkButton(
             master=self.toolbar_frame,
             image=icon,
             command=command,
             state=state,
             fg_color="#F4F4F8",
-            # border_width=1,
-            # border_color="gray90",
-            hover_color="#D7D8D9",
+            hover_color="#E7E2F8",
             text=text,
             text_color="#000000",
-            font=("Microsoft Tai Le Bold", 11),
+            font=("Source Sans Pro", 14),
             width=48,
             height=48,
             anchor=tk.W
         )
         button.pack(side=tk.TOP, anchor=tk.W, expand=False, fill=tk.X, padx=(5, 5), pady=(5, 5))
 
-        # tktooltip.ToolTip(widget=button, msg=text, fg="#000000", bg="#ffffff")
-
+        return button
 
     def add_patient(self):
         dialog = InsertionDialog()
@@ -257,14 +214,12 @@ class GUI(object):
         dialog = InsertionDialog()
 
     def close_active_tab(self):
-        active_tab = self.notebook.nametowidget(self.notebook.select())
-        active_tab.destroy()
+        active_tab = self.notebook.get()
+        self.notebook.delete(active_tab)
+        self.tabs -= 1
 
-        if len(
-                self.upper_frame.nametowidget(
-                    "notebook_frame.notebook").children) == 0:
-            close_active_tab_button = self.upper_frame.nametowidget("toolbar_frame.close_active_tab_button")
-            close_active_tab_button.state = tk.DISABLED
+        if self.tabs == 0:
+            self.close_tab_button.configure(state=tk.DISABLED)
 
     def solve(self):
         pass
@@ -336,19 +291,17 @@ class GUI(object):
                 row_height=60,
                 header_height=60,
                 fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
-                row_separator_width=1)
+                row_separator_width=1,
+                width=1200,
+                pagination_size=2)
         table.pack()
 
-        close_active_tab_button = self.upper_frame.nametowidget("toolbar_frame.close_active_tab_button")
-        close_active_tab_button.state = tk.NORMAL
+        self.tabs += 1
+        self.close_tab_button.configure(state=tk.NORMAL)
 
     def create_log_text_box(self):
-        # self.output_frame = Frame(master=self.lower_frame)
-        # self.output_frame.pack(fill=tk.BOTH, expand=True)
-
         self.text_box = ctk.CTkTextbox(master=self.right_frame, fg_color="#FFFFFF", border_color=self.FRAME_BORDER_COLOR, border_width=1)
         self.text_box.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=(10, 5), pady=(5, 10))
-        # self.text_box.config(background="#ffffff", fg="#000000", font=("Roboto", 10))
 
         sys.stdout = StdoutRedirector(self.text_box)
 
@@ -358,12 +311,6 @@ root.title("Interventional Radiology Planner & Scheduler")
 root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(),
                                    root.winfo_screenheight()))
 root.state("zoomed")
-
-# Create a style
-# style = ttk.Style(root)
-
-# Set the theme with the theme_use method
-# style.theme_use('winnative')  # put the theme name here, that you want to use
 
 gui = GUI(root)
 

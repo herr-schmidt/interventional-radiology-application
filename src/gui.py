@@ -27,7 +27,7 @@ class EntryWithLabel(ctk.CTkFrame):
         super(EntryWithLabel, self).__init__(master=master, width=200, fg_color="#ffffff")
 
         self.entry_variable = tk.StringVar()
-        self.entry = ctk.CTkEntry(master=self, textvariable=self.entry_variable, width=entry_width, border_width=1, border_color="gray90")
+        self.entry = ctk.CTkEntry(master=self, textvariable=self.entry_variable, width=entry_width, border_width=1, border_color="gray90", fg_color="#F4F4F8")
 
         self.label = ctk.CTkLabel(master=self, text=label_text, width=label_width, anchor=tk.W, fg_color="#ffffff", font=("Source Sans Pro", 14))
 
@@ -87,11 +87,11 @@ class GUI(object):
         self.master = master
 
         # left toolbar frame
-        self.toolbar_frame = ctk.CTkFrame(master=self.master, fg_color="#F4F4F8", corner_radius=0)
+        self.toolbar_frame = ctk.CTkFrame(master=self.master, fg_color="#DBDBDB", corner_radius=0)
         self.toolbar_frame.pack(side=tk.LEFT, fill=tk.Y, expand=False)
 
         # log output and footer
-        self.right_frame = ctk.CTkFrame(master=self.master, fg_color="#F4F4F8")
+        self.right_frame = ctk.CTkFrame(master=self.master, fg_color="#F4F4F8", corner_radius=0)
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
         self.input_columns = 6
@@ -119,56 +119,71 @@ class GUI(object):
         print("Welcome to the Interventional Radiology Planner and Scheduler.")
 
     def create_summary_frame(self):
-        self.summary_frame = ctk.CTkFrame(master=self.right_frame, fg_color="#FFFFFF", width=300, border_color=self.FRAME_BORDER_COLOR, border_width=1)
-        self.summary_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False, padx=(5, 10), pady=(10, 10))
+        self.summary_frame = ctk.CTkFrame(master=self.right_frame, fg_color="#DBDBDB")
+        self.summary_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False, padx=(10, 20), pady=(20, 20))
+
+        right_x_pad = 150
+
+        summary_label = ctk.CTkLabel(master=self.summary_frame, fg_color="#DBDBDB", text="Riepilogo pazienti", font=("Source Sans Pro Bold", 18))
+        summary_label.pack(side=tk.TOP, anchor=tk.W, padx=(20, right_x_pad), pady=(20, 0))
+
+        total_patients_label = ctk.CTkLabel(master=self.summary_frame, fg_color="#DBDBDB", text="Pazienti totali: ", font=("Source Sans Pro", 14))
+        total_patients_label.pack(side=tk.TOP, anchor=tk.W, padx=(20, right_x_pad), pady=(10, 0))
+
+        total_anesthesia_patients_label = ctk.CTkLabel(master=self.summary_frame, fg_color="#DBDBDB", text="Pazienti con anestesia: ", font=("Source Sans Pro", 14))
+        total_anesthesia_patients_label.pack(side=tk.TOP, anchor=tk.W, padx=(20, right_x_pad), pady=(0, 0))
+
+        total_infectious_patients_label = ctk.CTkLabel(master=self.summary_frame, fg_color="#DBDBDB", text="Pazienti con infezioni in atto: ", font=("Source Sans Pro", 14))
+        total_infectious_patients_label.pack(side=tk.TOP, anchor=tk.W, padx=(20, right_x_pad), pady=(0, 0))
 
     def create_toolbar(self):
 
         self.create_toolbar_button(
-            "resources/new-document.png",
+            "resources/new.png",
             self.new_planning_callback,
-            text="Nuova scheda"
+            text="Nuova scheda",
+            pady=(20, 0)
         )
         self.create_toolbar_button(
-            "resources/xlsx-file-format-extension.png",
+            "resources/xlsx.png",
             self.import_callback,
-            text="Importa...",
+            text="Importa da file Excel",
         )
         self.create_toolbar_button(
-            "resources/floppy-disk.png",
+            "resources/export.png",
             self.export_callback,
-            text="Salva",
+            text="Esporta in file Excel",
         )
         self.close_tab_button = self.create_toolbar_button(
-                                    "resources/bin.png",
+                                    "resources/delete.png",
                                     self.close_active_tab,
                                     text="Chiudi scheda attiva",
                                     state=tk.DISABLED,
                                 )
 
         self.create_toolbar_button(
-            "resources/add-user.png",
+            "resources/add-patient.png",
             self.add_patient,
             text="Aggiungi paziente",
             state=tk.NORMAL,
         )
 
         self.create_toolbar_button(
-            "resources/editing.png",
+            "resources/edit.png",
             self.edit_patient,
-            text="Modifica paziente",
+            text="Modifica paziente selezionato",
             state=tk.NORMAL,
         )
 
         self.create_toolbar_button(
-            "resources/play-button.png",
+            "resources/run.png",
             self.launch_solver,
             text="Calcola pianificazione",
             state=tk.NORMAL,
         )
 
         self.create_toolbar_button(
-            "resources/stop-button.png",
+            "resources/stop.png",
             self.stop_solver,
             text="Interrompi pianificazione",
             state=tk.NORMAL,
@@ -185,7 +200,9 @@ class GUI(object):
         icon_path,
         command,
         text=None,
-        state=tk.NORMAL
+        state=tk.NORMAL,
+        padx=(0, 0),
+        pady=(0, 0)
     ):
         icon = ctk.CTkImage(Image.open(icon_path))
 
@@ -194,18 +211,26 @@ class GUI(object):
             image=icon,
             command=command,
             state=state,
-            fg_color="#F4F4F8",
-            hover_color="#E7E2F8",
+            fg_color="#DBDBDB",
+            hover_color="#F4F4F8",
+            # border_width=1,
+            # border_color="gray50",
+            corner_radius=0,
+            border_spacing=15,
             text=text,
             text_color="#000000",
             font=("Source Sans Pro", 14),
-            width=48,
-            height=48,
+            # width=48,
+            # height=48,
             anchor=tk.W
         )
-        button.pack(side=tk.TOP, anchor=tk.W, expand=False, fill=tk.X, padx=(5, 5), pady=(5, 5))
+        button.pack(side=tk.TOP, anchor=tk.W, expand=False, fill=tk.X, padx=padx, pady=pady)
+        button.bind("<Enter>", command=self.hover_button, add="+")
 
         return button
+
+    def hover_button(self, event):
+        print(event.widget)
 
     def add_patient(self):
         dialog = InsertionDialog()
@@ -271,8 +296,13 @@ class GUI(object):
         self.initialize_input_table(input_tab=input_tab, data_frame=None)
 
     def create_notebook(self):
-        self.notebook = ctk.CTkTabview(self.right_frame, fg_color="#FFFFFF", border_color=self.FRAME_BORDER_COLOR, border_width=1)
-        self.notebook.pack(side=tk.TOP, expand=True, fill= tk.BOTH, padx=(10, 5), pady=(0, 5))
+        self.notebook = ctk.CTkTabview(self.right_frame,
+         fg_color="#FFFFFF",
+          border_color=self.FRAME_BORDER_COLOR,
+           border_width=1,
+           
+           )
+        self.notebook.pack(side=tk.TOP, expand=True, fill= tk.BOTH, padx=(20, 10), pady=(0, 10))
 
     def initialize_input_table(self, input_tab, data_frame):
         if data_frame is None:
@@ -300,8 +330,8 @@ class GUI(object):
         self.close_tab_button.configure(state=tk.NORMAL)
 
     def create_log_text_box(self):
-        self.text_box = ctk.CTkTextbox(master=self.right_frame, fg_color="#FFFFFF", border_color=self.FRAME_BORDER_COLOR, border_width=1)
-        self.text_box.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=(10, 5), pady=(5, 10))
+        self.text_box = ctk.CTkTextbox(master=self.right_frame, fg_color="#FFFFFF", font=("Source Sans Pro", 14))
+        self.text_box.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=(20, 10), pady=(10, 20))
 
         sys.stdout = StdoutRedirector(self.text_box)
 

@@ -182,9 +182,13 @@ class GUI(object):
         self.planning_number = 0
         self.tabs = 0
 
+        self.tables = []
+
         self.initializeUI()
 
     def initializeUI(self):
+        self.theme = "light"
+
         self.create_toolbar()
         self.create_summary_frame()
         self.create_notebook()
@@ -219,7 +223,7 @@ class GUI(object):
         total_patients_label.pack(side=tk.TOP,
                                   anchor=tk.W,
                                   padx=(20, right_x_pad),
-                                  pady=(10, 0))
+                                  pady=(0, 0))
 
         total_anesthesia_patients_label = ctk.CTkLabel(master=self.summary_frame,
                                                        fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
@@ -248,50 +252,93 @@ class GUI(object):
                            padx=(20, right_x_pad),
                            pady=(20, 0))
 
+        gap_label = ctk.CTkLabel(master=self.summary_frame,
+                                                       fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
+                                                       text="Gap (%): ",
+                                                       font=self.SOURCE_SANS_PRO_SMALL)
+        gap_label.pack(side=tk.TOP,
+                                             anchor=tk.W,
+                                             padx=(20, right_x_pad),
+                                             pady=(0, 0))
+        time_limit_label = ctk.CTkLabel(master=self.summary_frame,
+                                                       fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
+                                                       text="Timeout (s): ",
+                                                       font=self.SOURCE_SANS_PRO_SMALL)
+        time_limit_label.pack(side=tk.TOP,
+                                             anchor=tk.W,
+                                             padx=(20, right_x_pad),
+                                             pady=(0, 0))
+
     def create_toolbar(self):
 
         self.create_toolbar_button("resources/new.png",
+                                   "resources/new_w.png",
                                    self.new_planning_callback,
                                    text="Nuova scheda",
                                    pady=(20, 0)
                                    )
         self.create_toolbar_button("resources/xlsx.png",
+                                   "resources/xlsx_w.png",
                                    self.import_callback,
                                    text="Importa da file Excel",
                                    )
         self.create_toolbar_button("resources/export.png",
+                                   "resources/export_w.png",
                                    self.export_callback,
                                    text="Esporta in file Excel",
                                    )
         self.close_tab_button = self.create_toolbar_button("resources/delete.png",
+                                                           "resources/delete_w.png",
                                                            self.close_active_tab,
                                                            text="Chiudi scheda attiva",
                                                            state=tk.DISABLED,
                                                            )
 
         self.create_toolbar_button("resources/add-patient.png",
+                                   "resources/add-patient_w.png",
                                    self.add_patient,
                                    text="Aggiungi paziente",
                                    state=tk.NORMAL,
                                    )
 
         self.create_toolbar_button("resources/edit.png",
+                                   "resources/edit_w.png",
                                    self.edit_patient,
                                    text="Modifica paziente selezionato",
                                    state=tk.NORMAL,
                                    )
 
         self.create_toolbar_button("resources/run.png",
+                                   "resources/run_w.png",
                                    self.launch_solver,
                                    text="Calcola pianificazione",
                                    state=tk.NORMAL,
                                    )
 
         self.create_toolbar_button("resources/stop.png",
+                                   "resources/stop_w.png",
                                    self.stop_solver,
                                    text="Interrompi pianificazione",
                                    state=tk.NORMAL,
                                    )
+
+        self.theme_mode_switch = ctk.CTkSwitch(master=self.toolbar_frame,
+                                               text="Modalità notturna",
+                                               font=self.SOURCE_SANS_PRO_SMALL,
+                                               command=self.switch_theme_mode)
+        self.theme_mode_switch.pack(side=tk.BOTTOM, pady=(0, 20))
+
+    def switch_theme_mode(self):
+        if self.theme == "light":
+            self.theme = "dark"
+            ctk.set_appearance_mode("dark")
+            for table in self.tables:
+                table.switch_theme("dark")
+        else:
+            self.theme = "light"
+            ctk.set_appearance_mode("light")
+            for table in self.tables:
+                table.switch_theme("light")
 
     def launch_solver(self):
         pass
@@ -300,14 +347,15 @@ class GUI(object):
         pass
 
     def create_toolbar_button(self,
-                              icon_path,
+                              theme1_icon_path,
+                              theme2_icon_path,
                               command,
                               text=None,
                               state=tk.NORMAL,
                               padx=(0, 0),
                               pady=(0, 0)
                               ):
-        icon = ctk.CTkImage(Image.open(icon_path))
+        icon = ctk.CTkImage(Image.open(theme1_icon_path), Image.open(theme2_icon_path))
 
         button = ctk.CTkButton(
             master=self.toolbar_frame,
@@ -333,7 +381,6 @@ class GUI(object):
 
     def hover_button(self, event):
         print(event.widget)
-        ctk.set_appearance_mode("dark")
 
     def add_patient(self):
         dialog = InsertionDialog(frame_color=self.WHITE,
@@ -441,8 +488,12 @@ class GUI(object):
                       fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
                       row_separator_width=1,
                       width=1200,
-                      pagination_size=2)
+                      pagination_size=5,
+                      theme="light",
+                      even_row_colors=("#ffffff", self.THEME2_COLOR2))
         table.pack()
+
+        self.tables.append(table)
 
         self.tabs += 1
         self.close_tab_button.configure(state=tk.NORMAL)

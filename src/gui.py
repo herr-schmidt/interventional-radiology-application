@@ -245,7 +245,7 @@ class GUI(object):
 
         solver_label = ctk.CTkLabel(master=self.summary_frame,
                                      fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
-                                     text="Riepilogo solver",
+                                     text="Riepilogo impostazioni solver",
                                      font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
         solver_label.pack(side=tk.TOP,
                            anchor=tk.W,
@@ -489,7 +489,7 @@ class GUI(object):
                       row_separator_width=1,
                       width=1200,
                       pagination_size=5,
-                      theme="light",
+                      theme=self.theme,
                       even_row_colors=("#ffffff", self.THEME2_COLOR2))
         table.pack()
 

@@ -21,7 +21,7 @@ class Background(enum.Enum):
     HOVER = 2
 
 
-class Table(tk.Frame):
+class Table(ctk.CTkFrame):
 
     ROW_TAG_PREFIX = "row_"
     EMPTY_SPACE_TAG_PREFIX = "empty_"
@@ -49,6 +49,7 @@ class Table(tk.Frame):
                  navigation_buttons_hover_colors=("gray95", "gray95"),
                  header_text_colors=("#000000", "#FFFFFF"),
                  table_text_colors=("#000000", "#FFFFFF"),
+                 page_number_label_text_colors=("#000000", "#FFFFFF"),
                  theme="light"):
         """Constructs a Table for displaying data.
 
@@ -72,19 +73,20 @@ class Table(tk.Frame):
         self.data_frame = data_frame
         self.header_font = tkFont.Font(family="Source Sans Pro Bold", size=12)
         self.font = tkFont.Font(family="Source Sans Pro", size=12)
-        self.page_label_font = tkFont.Font(family="Source Sans Pro", size=10)
+        self.page_label_font = ("Source Sans Pro", 10)
         self.cell_text_left_offset = 6  # px
 
-        self.row_hover_colors=row_hover_colors
-        self.selected_row_colors=selected_row_colors
-        self.header_colors=header_colors
-        self.separator_line_colors=separator_line_colors
-        self.even_row_colors=even_row_colors
-        self.odd_row_colors=odd_row_colors
-        self.navigation_buttons_colors=navigation_buttons_colors
-        self.navigation_buttons_hover_colors=navigation_buttons_hover_colors
-        self.header_text_colors=header_text_colors
-        self.table_text_colors=table_text_colors
+        self.row_hover_colors = row_hover_colors
+        self.selected_row_colors = selected_row_colors
+        self.header_colors = header_colors
+        self.separator_line_colors = separator_line_colors
+        self.even_row_colors = even_row_colors
+        self.odd_row_colors = odd_row_colors
+        self.navigation_buttons_colors = navigation_buttons_colors
+        self.navigation_buttons_hover_colors = navigation_buttons_hover_colors
+        self.header_text_colors = header_text_colors
+        self.table_text_colors = table_text_colors
+        self.page_number_label_text_colors = page_number_label_text_colors
 
         self.hover_row_color = None
         self.selected_row_color = None
@@ -98,6 +100,23 @@ class Table(tk.Frame):
         self.table_text_color = None
 
         self.theme = theme
+
+        self.next_icon_b = Image.open("resources/next_b.png")
+        self.next_icon_w = Image.open("resources/next_w.png")
+
+        self.prev_icon_b = Image.open("resources/prev_b.png")
+        self.prev_icon_w = Image.open("resources/prev_w.png")
+
+        self.first_icon_b = Image.open("resources/first_b.png")
+        self.first_icon_w = Image.open("resources/first_w.png")
+
+        self.last_icon_b = Image.open("resources/last_b.png")
+        self.last_icon_w = Image.open("resources/last_w.png")
+
+        self.next_icon = None
+        self.prev_icon = None
+        self.first_icon = None
+        self.last_icon = None
 
         self.set_colors()
 
@@ -128,7 +147,8 @@ class Table(tk.Frame):
                                        xscrollcommand=self.horizontal_scrollbar.set,
                                        width=self.table_canvas_width,
                                        height=self.header_height + 2 * self.row_separator_width,
-                                       scrollregion=(0, 0, self.table_canvas_width, 0),
+                                       scrollregion=(
+                                           0, 0, self.table_canvas_width, 0),
                                        borderwidth=0,
                                        highlightthickness=0
                                        )
@@ -138,61 +158,35 @@ class Table(tk.Frame):
                                       yscrollcommand=self.vertical_scrollbar.set,
                                       width=self.table_canvas_width,
                                       height=self.table_canvas_height,
-                                      scrollregion=(0, 0, self.table_canvas_width, self.table_canvas_height),
+                                      scrollregion=(
+                                          0, 0, self.table_canvas_width, self.table_canvas_height),
                                       borderwidth=0,
                                       highlightthickness=0,
                                       # yscrollincrement=3
                                       )
 
-        self.footer = tk.Frame(master=self,
-                               width=self.table_canvas_width,
-                               height=self.footer_height,
-                               background=self.header_color
-                               )
+        self.footer = ctk.CTkFrame(master=self,
+                                   width=self.table_canvas_width,
+                                   height=self.footer_height,
+                                   fg_color=self.header_color,
+                                   corner_radius=0
+                                   )
 
-        next_icon = ctk.CTkImage(Image.open("resources/next_b.png"), Image.open("resources/next_w.png"))
-        prev_icon = ctk.CTkImage(Image.open("resources/prev_b.png"), Image.open("resources/prev_w.png"))
-        first_icon = ctk.CTkImage(Image.open("resources/first_b.png"), Image.open("resources/first_w.png"))
-        last_icon = ctk.CTkImage(Image.open("resources/last_b.png"), Image.open("resources/last_w.png"))
+        self.next_page_button = self.create_navigation_button(image=self.next_icon,
+                                                              command=self.next_page)
+        self.previous_page_button = self.create_navigation_button(image=self.prev_icon,
+                                                                  command=self.previous_page)
+        self.first_page_button = self.create_navigation_button(image=self.first_icon,
+                                                               command=self.first_page)
+        self.last_page_button = self.create_navigation_button(image=self.last_icon,
+                                                              command=self.last_page)
 
-        self.next_page_button = ctk.CTkButton(master=self.footer,
-                                              text="",
-                                              image=next_icon,
-                                              fg_color=self.navigation_buttons_color,
-                                              hover_color=self.navigation_buttons_hover_color,
-                                              width=32,
-                                              height=32,
-                                              command=self.next_page)
-        self.previous_page_button = ctk.CTkButton(master=self.footer,
-                                                  text="",
-                                                  image=prev_icon,
-                                                  fg_color=self.navigation_buttons_color,
-                                                  hover_color=self.navigation_buttons_hover_color,
-                                                  width=32,
-                                                  height=32,
-                                                  command=self.previous_page)
-        self.first_page_button = ctk.CTkButton(master=self.footer,
-                                               text="",
-                                               image=first_icon,
-                                               fg_color=self.navigation_buttons_color,
-                                               hover_color=self.navigation_buttons_hover_color,
-                                               width=32,
-                                               height=32,
-                                               command=self.first_page)
-        self.last_page_button = ctk.CTkButton(master=self.footer,
-                                              text="",
-                                              image=last_icon,
-                                              fg_color=self.navigation_buttons_color,
-                                              hover_color=self.navigation_buttons_hover_color,
-                                              width=32,
-                                              height=32,
-                                              command=self.last_page)
-
-        self.page_number_label = tk.Label(master=self.footer,
-                                          textvariable=self.current_page_label_var,
-                                          width=5,  # chars
-                                          font=self.page_label_font,
-                                          background=self.header_color)
+        self.page_number_label = ctk.CTkLabel(master=self.footer,
+                                              textvariable=self.current_page_label_var,
+                                              width=5,  # chars
+                                              font=self.page_label_font,
+                                              fg_color=self.header_color,
+                                              text_color=self.page_number_label_text_color)
         # border_color="gray75",
         # border_width=1)
 
@@ -219,6 +213,16 @@ class Table(tk.Frame):
         self.draw_table()
         self.do_bindings()
 
+    def create_navigation_button(self, image, command):
+        return ctk.CTkButton(master=self.footer,
+                             text="",
+                             image=image,
+                             fg_color=self.navigation_buttons_color,
+                             hover_color=self.navigation_buttons_hover_color,
+                             width=32,
+                             height=32,
+                             command=command)
+
     def switch_theme(self, new_theme):
         self.theme = new_theme
         self.set_colors()
@@ -227,16 +231,52 @@ class Table(tk.Frame):
         self.draw_header_text()
         self.draw_table()
 
-        self.footer.config(background=self.header_color)
+        self.footer.configure(fg_color=self.header_color)
+        self.page_number_label.configure(fg_color=self.header_color,
+                                         text_color=self.page_number_label_text_color)
 
+        self.next_page_button.destroy()
+        self.previous_page_button.destroy()
+        self.first_page_button.destroy()
+        self.last_page_button.destroy()
+
+        self.next_page_button = self.create_navigation_button(image=self.next_icon,
+                                                              command=self.next_page)
+        self.previous_page_button = self.create_navigation_button(image=self.prev_icon,
+                                                                  command=self.previous_page)
+        self.first_page_button = self.create_navigation_button(image=self.first_icon,
+                                                               command=self.first_page)
+        self.last_page_button = self.create_navigation_button(image=self.last_icon,
+                                                              command=self.last_page)
+
+        self.last_page_button.pack(side=tk.RIGHT,
+                                   anchor=tk.E,
+                                   padx=(0, 10),
+                                   pady=(5, 5),
+                                   before=self.page_number_label)
+        self.next_page_button.pack(side=tk.RIGHT,
+                                   anchor=tk.E,
+                                   before=self.page_number_label)
+        self.previous_page_button.pack(side=tk.RIGHT,
+                                       anchor=tk.W,
+                                       before=self.page_number_label)
+        self.first_page_button.pack(side=tk.RIGHT,
+                                    anchor=tk.W,
+                                    before=self.page_number_label)
 
     def set_colors(self):
         if self.theme == "light":
             theme = 0
-            ctk.set_appearance_mode("light")
+            self.next_icon = ctk.CTkImage(self.next_icon_b)
+            self.prev_icon = ctk.CTkImage(self.prev_icon_b)
+            self.first_icon = ctk.CTkImage(self.first_icon_b)
+            self.last_icon = ctk.CTkImage(self.last_icon_b)
         else:
             theme = 1
-            ctk.set_appearance_mode("dark")
+            self.next_icon = ctk.CTkImage(self.next_icon_w)
+            self.prev_icon = ctk.CTkImage(self.prev_icon_w)
+            self.first_icon = ctk.CTkImage(self.first_icon_w)
+            self.last_icon = ctk.CTkImage(self.last_icon_w)
 
         self.hover_row_color = self.row_hover_colors[theme]
         self.selected_row_color = self.selected_row_colors[theme]
@@ -248,13 +288,14 @@ class Table(tk.Frame):
         self.navigation_buttons_hover_color = self.navigation_buttons_hover_colors[theme]
         self.header_text_color = self.header_text_colors[theme]
         self.table_text_color = self.table_text_colors[theme]
+        self.page_number_label_text_color = self.page_number_label_text_colors[theme]
 
     def do_bindings(self):
         self.table_canvas.bind("<Button-1>", func=self.on_left_click)
         self.table_canvas.bind("<Motion>", func=self.on_hover)
         self.table_canvas.bind("<Leave>", func=self.on_leave)
 
-        self.bind("<Configure>", func=self.on_resize)
+        self.bind("<Configure>", command=self.on_resize)
 
     def on_resize(self, event):
         self.update_idletasks()
@@ -262,7 +303,8 @@ class Table(tk.Frame):
         self.pack_horizontal_scrollbar()
 
     def pack_vertical_scrollbar(self):
-        page_height = self.pagination_size * (self.row_height + self.row_separator_width)
+        page_height = self.pagination_size * \
+            (self.row_height + self.row_separator_width)
         if self.table_canvas.winfo_height() >= page_height:
             self.vertical_scrollbar.pack_forget()
         else:
@@ -272,7 +314,8 @@ class Table(tk.Frame):
                                          before=self.header_canvas)
 
     def pack_horizontal_scrollbar(self):
-        page_width = sum(self.column_widths) + self.columns * self.column_separator_width
+        page_width = sum(self.column_widths) + self.columns * \
+            self.column_separator_width
         if self.header_canvas.winfo_width() >= page_width:
             self.horizontal_scrollbar.pack_forget()
         else:
@@ -434,7 +477,8 @@ class Table(tk.Frame):
         self.table_canvas.delete(footer_separator_tag)
 
         y = (self.row_separator_width + self.row_height) * self.pagination_size
-        y_bottom = (self.row_separator_width + self.row_height) * self.pagination_size + self.footer_separator_width
+        y_bottom = (self.row_separator_width + self.row_height) * \
+            self.pagination_size + self.footer_separator_width
 
         self.table_canvas.create_rectangle(0, y,
                                            self.table_canvas.winfo_reqwidth(), y + y_bottom,
@@ -447,7 +491,8 @@ class Table(tk.Frame):
         self.table_canvas.delete(empty_space_tag)
 
         y = (self.row_separator_width + self.row_height) * last_page_rows
-        y_bottom = (self.row_separator_width + self.row_height) * self.pagination_size
+        y_bottom = (self.row_separator_width + self.row_height) * \
+            self.pagination_size
 
         self.table_canvas.create_rectangle(0, y,
                                            self.table_canvas.winfo_reqwidth(), y + y_bottom,
@@ -503,8 +548,8 @@ class Table(tk.Frame):
             text = row_elements[column]
             max_displayable_text = self.compute_max_displayable(text, column)
             self.table_canvas.create_text((x, y),
-                                          text=max_displayable_text, 
-                                          font=self.font, 
+                                          text=max_displayable_text,
+                                          font=self.font,
                                           anchor=tk.W,
                                           tags=row_tag,
                                           fill=self.table_text_color)
@@ -532,7 +577,8 @@ class Table(tk.Frame):
             self.hover_row = None
 
     def on_hover(self, event):
-        hover_row = self.get_cell(event)[0] + self.current_page * self.pagination_size
+        hover_row = self.get_cell(
+            event)[0] + self.current_page * self.pagination_size
         previously_hovered_row = self.hover_row
 
         # when on last page we do not want to hover on a non-existing line (empty space)
@@ -557,7 +603,8 @@ class Table(tk.Frame):
         self.hover_row = hover_row
 
     def on_left_click(self, event):
-        new_selected_row = self.get_cell(event)[0] + self.current_page * self.pagination_size
+        new_selected_row = self.get_cell(
+            event)[0] + self.current_page * self.pagination_size
 
         # when on last page we do not want to select a non-existing line (empty space)
         if new_selected_row >= self.data_frame.shape[0]:
@@ -580,8 +627,10 @@ class Table(tk.Frame):
         row = 0
         column = 0
 
-        vertical_scrollbar_offset = self.table_canvas.winfo_reqheight() * self.vertical_scrollbar.get()[0]
-        horizontal_scrollbar_offset = self.table_canvas.winfo_reqwidth() * self.horizontal_scrollbar.get()[0]
+        vertical_scrollbar_offset = self.table_canvas.winfo_reqheight() * \
+            self.vertical_scrollbar.get()[0]
+        horizontal_scrollbar_offset = self.table_canvas.winfo_reqwidth() * \
+            self.horizontal_scrollbar.get()[0]
 
         y = self.row_height + self.row_separator_width
         x = self.column_widths[column]
@@ -628,7 +677,7 @@ class Table(tk.Frame):
 
         self.table_canvas.pack(side=tk.TOP, expand=False, fill=tk.Y)
 
-        tk.Frame.pack(self, **kwargs)
+        ctk.CTkFrame.pack(self, **kwargs)
         self.update_idletasks()
 
         self.pack_vertical_scrollbar()
@@ -650,7 +699,7 @@ ctypes.windll.shcore.SetProcessDpiAwareness(2)
 root.title("Fancy table")
 
 table = Table(master=root,
-width=900,
+              width=900,
               data_frame=data_frame,
               row_height=30,
               header_height=70,

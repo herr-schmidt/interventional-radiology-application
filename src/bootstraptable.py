@@ -65,10 +65,10 @@ class Table(ctk.CTkFrame):
         """
         super().__init__(master=master, width=width)
 
-        self.horizontal_scrollbar = tk.Scrollbar(master=self,
-                                                 orient=ctk.HORIZONTAL)
-        self.vertical_scrollbar = tk.Scrollbar(master=self,
-                                               orient=ctk.VERTICAL)
+        self.horizontal_scrollbar = ctk.CTkScrollbar(master=self,
+                                                     orientation=ctk.HORIZONTAL)
+        self.vertical_scrollbar = ctk.CTkScrollbar(master=self,
+                                                   orientation=ctk.VERTICAL)
 
         self.data_frame = data_frame
         self.header_font = tkFont.Font(family="Source Sans Pro Bold", size=12)
@@ -147,8 +147,7 @@ class Table(ctk.CTkFrame):
                                        xscrollcommand=self.horizontal_scrollbar.set,
                                        width=self.table_canvas_width,
                                        height=self.header_height + 2 * self.row_separator_width,
-                                       scrollregion=(
-                                           0, 0, self.table_canvas_width, 0),
+                                       scrollregion=(0, 0, self.table_canvas_width, 0),
                                        borderwidth=0,
                                        highlightthickness=0
                                        )
@@ -158,11 +157,9 @@ class Table(ctk.CTkFrame):
                                       yscrollcommand=self.vertical_scrollbar.set,
                                       width=self.table_canvas_width,
                                       height=self.table_canvas_height,
-                                      scrollregion=(
-                                          0, 0, self.table_canvas_width, self.table_canvas_height),
+                                      scrollregion=(0, 0, self.table_canvas_width, self.table_canvas_height),
                                       borderwidth=0,
-                                      highlightthickness=0,
-                                      # yscrollincrement=3
+                                      highlightthickness=0
                                       )
 
         self.footer = ctk.CTkFrame(master=self,
@@ -187,26 +184,9 @@ class Table(ctk.CTkFrame):
                                               font=self.page_label_font,
                                               fg_color=self.header_color,
                                               text_color=self.page_number_label_text_color)
-        # border_color="gray75",
-        # border_width=1)
 
-        # self.pagination_combo_text = ctk.StringVar()
-        # self.pagination_combo_text.initialize(str(self.pagination_size))
-        #
-        # self.pagination_combo = ctk.CTkComboBox(master=self.footer,
-        #                                         variable=self.pagination_combo_text,
-        #                                         values=["5", "10", "25", "50", "100"],
-        #                                         border_width=1,
-        #                                         height=50,
-        #                                         fg_color=self.header_color,
-        #                                         bg_color=self.header_color,
-        #                                         border_color=self.header_color,
-        #                                         button_color=self.header_color,
-        #                                         button_hover_color=self.navigation_buttons_hover_color
-        #                                         )
-
-        self.vertical_scrollbar.config(command=self.table_canvas.yview)
-        self.horizontal_scrollbar.config(command=self.horizontal_scroll)
+        self.vertical_scrollbar.configure(command=self.table_canvas.yview)
+        self.horizontal_scrollbar.configure(command=self.horizontal_scroll)
 
         self.draw_header()
         self.draw_header_text()
@@ -303,9 +283,12 @@ class Table(ctk.CTkFrame):
         self.pack_horizontal_scrollbar()
 
     def pack_vertical_scrollbar(self):
-        page_height = self.pagination_size * \
-            (self.row_height + self.row_separator_width)
-        if self.table_canvas.winfo_height() >= page_height:
+        df_rows = self.get_current_page_rows()
+        actual_entries = len(df_rows) * (self.row_height + self.row_separator_width)
+
+        self.table_canvas.configure(scrollregion=(0, 0, self.table_canvas_width, actual_entries))
+
+        if self.table_canvas.winfo_height() >= actual_entries:
             self.vertical_scrollbar.pack_forget()
         else:
             self.vertical_scrollbar.pack(side=tk.RIGHT,
@@ -364,9 +347,7 @@ class Table(ctk.CTkFrame):
         self.draw_table()
 
     def compute_canvas_height(self):
-        df_rows = self.get_current_page_rows()
-
-        return len(df_rows) * (self.row_height + self.row_separator_width) + self.footer_separator_width
+        return self.pagination_size * (self.row_height + self.row_separator_width)
 
     def compute_column_widths(self):
         column_widths = []
@@ -650,16 +631,9 @@ class Table(ctk.CTkFrame):
         self.table_canvas.xview(*args)
 
     def pack(self, **kwargs):
-        # self.horizontal_scrollbar.pack(side=ctk.BOTTOM,
-        #                                expand=False,
-        #                                fill=ctk.X)
-        # self.vertical_scrollbar.pack(side=ctk.RIGHT,
-        #                              expand=False,
-        #                              fill=ctk.Y
-        #                              )
         self.header_canvas.pack(side=tk.TOP, expand=False, fill=tk.Y)
-
         self.footer.pack(side=tk.BOTTOM, expand=False, fill=tk.X)
+        self.table_canvas.pack(side=tk.TOP, expand=False, fill=tk.Y)
 
         self.last_page_button.pack(side=tk.RIGHT,
                                    anchor=tk.E,
@@ -673,9 +647,6 @@ class Table(ctk.CTkFrame):
                                     anchor=tk.W,
                                     padx=(0, 40),
                                     pady=(1, 0))
-        # self.pagination_combo.pack(side=ctk.RIGHT, anchor=ctk.W, padx=(0, 40), pady=(1, 0))
-
-        self.table_canvas.pack(side=tk.TOP, expand=False, fill=tk.Y)
 
         ctk.CTkFrame.pack(self, **kwargs)
         self.update_idletasks()

@@ -23,7 +23,7 @@ class StdoutRedirector(object):
 
 class EntryWithLabel(ctk.CTkFrame):
 
-    def __init__(self, master, frame_color, label_text, label_color, entry_color, entry_width=200, label_width=10, font=("Source Sans Pro", 14)):
+    def __init__(self, master, frame_color, label_text, label_color, label_text_color, entry_color, entry_width=200, label_width=10, font=("Source Sans Pro", 14)):
         super(EntryWithLabel, self).__init__(master=master,
                                              width=200,
                                              fg_color=frame_color)
@@ -40,6 +40,7 @@ class EntryWithLabel(ctk.CTkFrame):
                                   text=label_text,
                                   width=label_width,
                                   anchor=tk.W,
+                                  text_color=label_text_color,
                                   fg_color=label_color,
                                   font=font)
 
@@ -49,7 +50,7 @@ class EntryWithLabel(ctk.CTkFrame):
 
 class InsertionDialog():
 
-    def __init__(self, frame_color, section_font, elements_font, labels_color, entries_color, checkboxes_color, checkmarks_color):
+    def __init__(self, frame_color, section_font, elements_font, labels_color, labels_text_color, entries_color, checkboxes_color, checkmarks_color):
         self.dialog = ctk.CTkToplevel(fg_color=frame_color)
 
         dialog_frame = ctk.CTkFrame(master=self.dialog,
@@ -59,21 +60,25 @@ class InsertionDialog():
         registry_label = ctk.CTkLabel(master=dialog_frame,
                                       text="Anagrafica",
                                       font=section_font,
+                                      text_color=labels_text_color,
                                       width=10)
         name_entry = EntryWithLabel(dialog_frame,
                                     label_text="Nome",
                                     frame_color=frame_color,
                                     label_color=labels_color,
+                                    label_text_color=labels_text_color,
                                     entry_color=entries_color)
         surname_entry = EntryWithLabel(dialog_frame,
                                        label_text="Cognome",
                                        frame_color=frame_color,
                                        label_color=labels_color,
+                                       label_text_color=labels_text_color,
                                        entry_color=entries_color)
 
         planning_label = ctk.CTkLabel(master=dialog_frame,
                                       text="Pianificazione",
                                       font=section_font,
+                                      text_color=labels_text_color,
                                       width=14)
         waiting_list_date_entry = EntryWithLabel(
             dialog_frame,
@@ -81,6 +86,7 @@ class InsertionDialog():
             label_text="Inserimento in lista d'attesa",
             label_width=24,
             label_color=labels_color,
+            label_text_color=labels_text_color,
             entry_color=entries_color)
 
         anesthesia = tk.BooleanVar(False)
@@ -92,6 +98,7 @@ class InsertionDialog():
                                               border_width=1,
                                               hover=False,
                                               text="Anestesia",
+                                              text_color=labels_text_color,
                                               font=elements_font,
                                               checkmark_color=checkmarks_color,
                                               fg_color=checkboxes_color)
@@ -101,9 +108,19 @@ class InsertionDialog():
                                               border_width=1,
                                               hover=False,
                                               text="Infezioni in atto",
+                                              text_color=labels_text_color,
                                               font=elements_font,
                                               checkmark_color=checkmarks_color,
                                               fg_color=checkboxes_color)
+
+        confirm_button = ctk.CTkButton(master=dialog_frame,
+                                       text="Conferma",
+                                       fg_color=checkboxes_color,
+                                       hover_color="#1265EA",
+                                       font=elements_font,
+                                       text_color="#FFFFFF",
+                                       width=100,
+                                       corner_radius=3)
 
         dialog_frame.pack()
 
@@ -132,6 +149,10 @@ class InsertionDialog():
                                  anchor=tk.W,
                                  padx=(20, 20),
                                  pady=(0, 20))
+        confirm_button.pack(side=tk.BOTTOM,
+                            anchor=tk.E,
+                            padx=(0, 20),
+                            pady=(0, 20))
 
 
 class GUI(object):
@@ -143,6 +164,7 @@ class GUI(object):
     WHITE = "#FFFFFF"
     BLACK = "#000000"
     CRAYON_BLUE = "#287CFA"
+    DARK_CRAYON_BLUE = "#1265EA"
     THEME1_COLOR1 = "#F4F4F8"
     THEME1_COLOR2 = "#DBDBDB"
 
@@ -325,7 +347,8 @@ class GUI(object):
         self.theme_mode_switch = ctk.CTkSwitch(master=self.toolbar_frame,
                                                text="Modalità notturna",
                                                font=self.SOURCE_SANS_PRO_SMALL,
-                                               command=self.switch_theme_mode)
+                                               command=self.switch_theme_mode,
+                                               progress_color=self.DARK_CRAYON_BLUE)
         self.theme_mode_switch.pack(side=tk.BOTTOM, pady=(0, 20))
 
     def switch_theme_mode(self):
@@ -383,19 +406,21 @@ class GUI(object):
         print(event.widget)
 
     def add_patient(self):
-        dialog = InsertionDialog(frame_color=self.WHITE,
+        dialog = InsertionDialog(frame_color=(self.WHITE, self.THEME2_COLOR2),
                                  section_font=self.SOURCE_SANS_PRO_MEDIUM,
                                  elements_font=self.SOURCE_SANS_PRO_SMALL,
-                                 labels_color=self.WHITE,
+                                 labels_color=(self.WHITE, self.THEME2_COLOR2),
+                                 labels_text_color=(self.BLACK, self.WHITE),
                                  entries_color=(self.THEME1_COLOR1, self.THEME2_COLOR1),
                                  checkmarks_color=self.WHITE,
                                  checkboxes_color=self.CRAYON_BLUE)
 
     def edit_patient(self):
-        dialog = InsertionDialog(frame_color=self.WHITE,
+        dialog = InsertionDialog(frame_color=(self.WHITE, self.THEME2_COLOR2),
                                  section_font=self.SOURCE_SANS_PRO_MEDIUM,
                                  elements_font=self.SOURCE_SANS_PRO_SMALL,
-                                 labels_color=self.WHITE,
+                                 labels_color=(self.WHITE, self.THEME2_COLOR2),
+                                 labels_text_color=(self.BLACK, self.WHITE),
                                  entries_color=(self.THEME1_COLOR1, self.THEME2_COLOR1),
                                  checkmarks_color=self.WHITE,
                                  checkboxes_color=self.CRAYON_BLUE)
@@ -462,7 +487,10 @@ class GUI(object):
 
     def create_notebook(self):
         self.notebook = ctk.CTkTabview(self.right_frame,
-                                       fg_color=(self.WHITE, self.THEME2_COLOR2))
+                                       fg_color=(self.WHITE, self.THEME2_COLOR2),
+                                       segmented_button_selected_color=self.CRAYON_BLUE,
+                                       segmented_button_selected_hover_color=self.DARK_CRAYON_BLUE,
+                                       )
         self.notebook.pack(side=tk.TOP,
                            expand=True,
                            fill=tk.BOTH,
@@ -488,7 +516,7 @@ class GUI(object):
                       fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
                       row_separator_width=1,
                       width=1200,
-                      pagination_size=5,
+                      pagination_size=3,
                       theme=self.theme,
                       even_row_colors=("#ffffff", self.THEME2_COLOR2))
         table.pack()

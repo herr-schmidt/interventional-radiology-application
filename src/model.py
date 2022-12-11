@@ -8,4 +8,8 @@ class Patient:
         self.infectious = infectious
         self.list_insertion_date = list_insertion_date
 
-        
+class InterventionalRadiologyModel():
+
+    def __init__(self):
+        self.solver = None
+        self.patients = None

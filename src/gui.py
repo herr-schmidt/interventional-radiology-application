@@ -5,7 +5,7 @@ from tkinter import filedialog
 import pandas
 import customtkinter as ctk
 from bootstraptable import Table, FitCriterion
-import pandas as pd
+from controller import Controller
 
 
 class StdoutRedirector(object):
@@ -48,113 +48,6 @@ class EntryWithLabel(ctk.CTkFrame):
         self.entry.pack(side=tk.LEFT)
 
 
-class InsertionDialog():
-
-    def __init__(self, frame_color, section_font, elements_font, labels_color, labels_text_color, entries_color, checkboxes_color, checkmarks_color):
-        self.dialog = ctk.CTkToplevel(fg_color=frame_color)
-
-        dialog_frame = ctk.CTkFrame(master=self.dialog,
-                                    width=100, height=100,
-                                    fg_color=frame_color)
-
-        registry_label = ctk.CTkLabel(master=dialog_frame,
-                                      text="Anagrafica",
-                                      font=section_font,
-                                      text_color=labels_text_color,
-                                      width=10)
-        name_entry = EntryWithLabel(dialog_frame,
-                                    label_text="Nome",
-                                    frame_color=frame_color,
-                                    label_color=labels_color,
-                                    label_text_color=labels_text_color,
-                                    entry_color=entries_color)
-        surname_entry = EntryWithLabel(dialog_frame,
-                                       label_text="Cognome",
-                                       frame_color=frame_color,
-                                       label_color=labels_color,
-                                       label_text_color=labels_text_color,
-                                       entry_color=entries_color)
-
-        planning_label = ctk.CTkLabel(master=dialog_frame,
-                                      text="Pianificazione",
-                                      font=section_font,
-                                      text_color=labels_text_color,
-                                      width=14)
-        waiting_list_date_entry = EntryWithLabel(
-            dialog_frame,
-            frame_color=frame_color,
-            label_text="Inserimento in lista d'attesa",
-            label_width=24,
-            label_color=labels_color,
-            label_text_color=labels_text_color,
-            entry_color=entries_color)
-
-        anesthesia = tk.BooleanVar(False)
-        infections = tk.BooleanVar(False)
-
-        anesthesia_checkbox = ctk.CTkCheckBox(master=dialog_frame,
-                                              variable=anesthesia,
-                                              border_color="gray90",
-                                              border_width=1,
-                                              hover=False,
-                                              text="Anestesia",
-                                              text_color=labels_text_color,
-                                              font=elements_font,
-                                              checkmark_color=checkmarks_color,
-                                              fg_color=checkboxes_color)
-        infections_checkbox = ctk.CTkCheckBox(master=dialog_frame,
-                                              variable=infections,
-                                              border_color="gray90",
-                                              border_width=1,
-                                              hover=False,
-                                              text="Infezioni in atto",
-                                              text_color=labels_text_color,
-                                              font=elements_font,
-                                              checkmark_color=checkmarks_color,
-                                              fg_color=checkboxes_color)
-
-        confirm_button = ctk.CTkButton(master=dialog_frame,
-                                       text="Conferma",
-                                       fg_color=checkboxes_color,
-                                       hover_color="#1265EA",
-                                       font=elements_font,
-                                       text_color="#FFFFFF",
-                                       width=100,
-                                       corner_radius=3)
-
-        dialog_frame.pack()
-
-        registry_label.pack(side=tk.TOP,
-                            anchor=tk.W,
-                            padx=(20, 0))
-        name_entry.pack(side=tk.TOP,
-                        anchor=tk.W,
-                        padx=(20, 20),
-                        pady=(5, 5))
-        surname_entry.pack(side=tk.TOP,
-                           anchor=tk.W,
-                           padx=(20, 20),
-                           pady=(0, 20))
-
-        planning_label.pack(side=tk.TOP, anchor=tk.W, padx=(20, 0))
-        waiting_list_date_entry.pack(side=tk.TOP,
-                                     anchor=tk.W,
-                                     padx=(20, 20),
-                                     pady=(5, 5))
-        anesthesia_checkbox.pack(side=tk.TOP,
-                                 anchor=tk.W,
-                                 padx=(20, 20),
-                                 pady=(5, 5))
-        infections_checkbox.pack(side=tk.TOP,
-                                 anchor=tk.W,
-                                 padx=(20, 20),
-                                 pady=(0, 20))
-        confirm_button.pack(side=tk.BOTTOM,
-                            anchor=tk.E,
-                            padx=(0, 20),
-                            pady=(0, 20))
-
-
 class GUI(object):
 
     # constants
@@ -175,8 +68,156 @@ class GUI(object):
     SOURCE_SANS_PRO_MEDIUM = ("Source Sans Pro", 18)
     SOURCE_SANS_PRO_MEDIUM_BOLD = ("Source Sans Pro Bold", 18)
 
+    PLANNING_HEADER = {"Nome": [],
+                       "Cognome": [],
+                       "Prestazioni": [],
+                       "Anestesia": [],
+                       "Infezioni": [],
+                       "Data inserimento in lista": [],
+                      }
+
+    WELCOME_MESSAGE = "Welcome to the Interventional Radiology Planner and Scheduler."
+
+    class InsertionDialog():
+
+        def __init__(self,
+        parent_view,
+         frame_color,
+          section_font,
+           elements_font,
+            labels_color,
+             labels_text_color,
+              entries_color,
+               checkboxes_color,
+                checkmarks_color):
+
+            self.parent_view = parent_view
+
+            self.dialog = ctk.CTkToplevel(fg_color=frame_color)
+
+            dialog_frame = ctk.CTkFrame(master=self.dialog,
+                                        width=100, height=100,
+                                        fg_color=frame_color)
+
+            registry_label = ctk.CTkLabel(master=dialog_frame,
+                                          text="Anagrafica",
+                                          font=section_font,
+                                          text_color=labels_text_color,
+                                          width=10)
+            name_entry = EntryWithLabel(dialog_frame,
+                                        label_text="Nome",
+                                        frame_color=frame_color,
+                                        label_color=labels_color,
+                                        label_text_color=labels_text_color,
+                                        entry_color=entries_color)
+            surname_entry = EntryWithLabel(dialog_frame,
+                                           label_text="Cognome",
+                                           frame_color=frame_color,
+                                           label_color=labels_color,
+                                           label_text_color=labels_text_color,
+                                           entry_color=entries_color)
+
+            planning_label = ctk.CTkLabel(master=dialog_frame,
+                                          text="Pianificazione",
+                                          font=section_font,
+                                          text_color=labels_text_color,
+                                          width=14)
+            waiting_list_date_entry = EntryWithLabel(
+                dialog_frame,
+                frame_color=frame_color,
+                label_text="Inserimento in lista d'attesa",
+                label_width=24,
+                label_color=labels_color,
+                label_text_color=labels_text_color,
+                entry_color=entries_color)
+
+            anesthesia = tk.BooleanVar(False)
+            infections = tk.BooleanVar(False)
+
+            anesthesia_checkbox = ctk.CTkCheckBox(master=dialog_frame,
+                                                  variable=anesthesia,
+                                                  border_color="gray90",
+                                                  border_width=1,
+                                                  hover=False,
+                                                  text="Anestesia",
+                                                  text_color=labels_text_color,
+                                                  font=elements_font,
+                                                  checkmark_color=checkmarks_color,
+                                                  fg_color=checkboxes_color)
+            infections_checkbox = ctk.CTkCheckBox(master=dialog_frame,
+                                                  variable=infections,
+                                                  border_color="gray90",
+                                                  border_width=1,
+                                                  hover=False,
+                                                  text="Infezioni in atto",
+                                                  text_color=labels_text_color,
+                                                  font=elements_font,
+                                                  checkmark_color=checkmarks_color,
+                                                  fg_color=checkboxes_color)
+
+            confirm_button = ctk.CTkButton(master=dialog_frame,
+                                           text="Conferma",
+                                           fg_color=checkboxes_color,
+                                           hover_color="#1265EA",
+                                           font=elements_font,
+                                           text_color="#FFFFFF",
+                                           width=100,
+                                           corner_radius=3,
+                                           command=self.save_patient)
+
+            dialog_frame.pack()
+
+            registry_label.pack(side=tk.TOP,
+                                anchor=tk.W,
+                                padx=(20, 0))
+            name_entry.pack(side=tk.TOP,
+                            anchor=tk.W,
+                            padx=(20, 20),
+                            pady=(5, 5))
+            surname_entry.pack(side=tk.TOP,
+                               anchor=tk.W,
+                               padx=(20, 20),
+                               pady=(0, 20))
+
+            planning_label.pack(side=tk.TOP, anchor=tk.W, padx=(20, 0))
+            waiting_list_date_entry.pack(side=tk.TOP,
+                                         anchor=tk.W,
+                                         padx=(20, 20),
+                                         pady=(5, 5))
+            anesthesia_checkbox.pack(side=tk.TOP,
+                                     anchor=tk.W,
+                                     padx=(20, 20),
+                                     pady=(5, 5))
+            infections_checkbox.pack(side=tk.TOP,
+                                     anchor=tk.W,
+                                     padx=(20, 20),
+                                     pady=(0, 20))
+            confirm_button.pack(side=tk.BOTTOM,
+                                anchor=tk.E,
+                                padx=(0, 20),
+                                pady=(0, 20))
+
+        def save_patient(self):
+            print("save!")
+
+
     def __init__(self, master):
         self.master = master
+
+        self.dialogs = []
+        self.planning_number = 0
+        self.tabs = 0
+        self.tables = dict()
+
+        self.controller: Controller = None
+
+        self.initializeUI()
+
+    def bind_controller(self, controller):
+        self.controller = controller
+
+    def initializeUI(self):
+        self.theme = "light"
 
         # left toolbar frame
         self.toolbar_frame = ctk.CTkFrame(master=self.master,
@@ -188,35 +229,14 @@ class GUI(object):
         self.right_frame = ctk.CTkFrame(master=self.master,
                                         fg_color=(self.THEME1_COLOR1, self.THEME2_COLOR1),
                                         corner_radius=0)
-        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-
-        self.input_columns = 6
-        self.input_columns_translations = {
-            "a": "Nome",
-            "b": "Cognome",
-            "c": "Prestazioni",
-            "d": "Anestesia",
-            "e": "Infezioni",
-            "f": "Data inserimento in lista",
-        }
-        self.dialogs = []
-
-        self.planning_number = 0
-        self.tabs = 0
-
-        self.tables = []
-
-        self.initializeUI()
-
-    def initializeUI(self):
-        self.theme = "light"
+        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)  
 
         self.create_toolbar()
         self.create_summary_frame()
         self.create_notebook()
         self.create_log_text_box()
 
-        print("Welcome to the Interventional Radiology Planner and Scheduler.")
+        print(self.WELCOME_MESSAGE)
 
     def create_summary_frame(self):
         self.summary_frame = ctk.CTkFrame(master=self.right_frame,
@@ -355,12 +375,12 @@ class GUI(object):
         if self.theme == "light":
             self.theme = "dark"
             ctk.set_appearance_mode("dark")
-            for table in self.tables:
+            for table in self.tables.values():
                 table.switch_theme("dark")
         else:
             self.theme = "light"
             ctk.set_appearance_mode("light")
-            for table in self.tables:
+            for table in self.tables.values():
                 table.switch_theme("light")
 
     def launch_solver(self):
@@ -406,7 +426,8 @@ class GUI(object):
         print(event.widget)
 
     def add_patient(self):
-        dialog = InsertionDialog(frame_color=(self.WHITE, self.THEME2_COLOR2),
+        dialog = self.InsertionDialog(parent_view=self,
+                                 frame_color=(self.WHITE, self.THEME2_COLOR2),
                                  section_font=self.SOURCE_SANS_PRO_MEDIUM,
                                  elements_font=self.SOURCE_SANS_PRO_SMALL,
                                  labels_color=(self.WHITE, self.THEME2_COLOR2),
@@ -416,7 +437,8 @@ class GUI(object):
                                  checkboxes_color=self.CRAYON_BLUE)
 
     def edit_patient(self):
-        dialog = InsertionDialog(frame_color=(self.WHITE, self.THEME2_COLOR2),
+        dialog = self.InsertionDialog(parent_view=self,
+                                 frame_color=(self.WHITE, self.THEME2_COLOR2),
                                  section_font=self.SOURCE_SANS_PRO_MEDIUM,
                                  elements_font=self.SOURCE_SANS_PRO_SMALL,
                                  labels_color=(self.WHITE, self.THEME2_COLOR2),
@@ -443,71 +465,44 @@ class GUI(object):
         if selected_file is None:
             return
 
-        input_tab = self.notebook.add(
-            "Lista pazienti " + str(self.planning_number))
-        self.planning_number += 1
-
-        import_data_frame = pandas.read_excel(selected_file.name)
-        self.initialize_input_table(input_tab=input_tab,
-                                    data_frame=import_data_frame)
+        controller.import_sheet(selected_file=selected_file)
 
     def export_callback(self):
         selected_filetype = tk.StringVar()
-        file_name = filedialog.asksaveasfilename(filetypes=[(self.EXCEL_FILE, ["*.xlsx"]), (self.ODF_FILE, "*.odf*")],
+        file_name = filedialog.asksaveasfilename(filetypes=[(self.EXCEL_FILE, ["*.xlsx"])],
                                                  typevariable=selected_filetype)
         if selected_filetype.get() == self.EXCEL_FILE:
             extension = ".xlsx"
-        elif selected_filetype.get() == self.ODF_FILE:
-            extension = ".odf"
         else:
             raise Exception("...")
 
         file_name += str(extension)
 
-        tabs = self.notebook.tabs()
-        current_tab_id = self.notebook.index(self.notebook.select())
+        selected_tab = self.notebook.get()
+        table = self.tables[selected_tab]
 
-        selected_tab = self.notebook.nametowidget(tabs[current_tab_id])
-        for w in selected_tab.winfo_children():
-            if isinstance(w, Table):
-                table = w
-                break
-
-        table.data_frame.to_excel(file_name,
-                                  header=list(table.data_frame.columns),
-                                  index=False  # avoid writing a column of indices
-                                  )
+        self.controller.export_sheet(table.data_frame, file_name)
 
     def new_planning_callback(self):
-        input_tab = self.notebook.add(
-            "Lista pazienti " + str(self.planning_number))
-        self.planning_number += 1
-
-        self.initialize_input_table(input_tab=input_tab, data_frame=None)
+        controller.create_empty_planning()
 
     def create_notebook(self):
         self.notebook = ctk.CTkTabview(self.right_frame,
                                        fg_color=(self.WHITE, self.THEME2_COLOR2),
                                        segmented_button_selected_color=self.CRAYON_BLUE,
-                                       segmented_button_selected_hover_color=self.DARK_CRAYON_BLUE,
-                                       )
+                                       segmented_button_selected_hover_color=self.DARK_CRAYON_BLUE)
         self.notebook.pack(side=tk.TOP,
                            expand=True,
                            fill=tk.BOTH,
                            padx=(20, 10),
                            pady=(0, 10))
 
-    def initialize_input_table(self, input_tab, data_frame):
+    def initialize_input_table(self, tab_name, data_frame):
         if data_frame is None:
-            columns = {
-                "Nome": [],
-                "Cognome": [],
-                "Prestazioni": [],
-                "Anestesia": [],
-                "Infezioni": [],
-                "Data inserimento in lista": [],
-            }
+            columns = self.PLANNING_HEADER
             data_frame = pandas.DataFrame(data=columns)
+
+        input_tab = self.notebook.add(tab_name)
 
         table = Table(master=input_tab,
                       data_frame=data_frame,
@@ -521,7 +516,7 @@ class GUI(object):
                       even_row_colors=("#ffffff", self.THEME2_COLOR2))
         table.pack()
 
-        self.tables.append(table)
+        self.tables[tab_name] = table
 
         self.tabs += 1
         self.close_tab_button.configure(state=tk.NORMAL)
@@ -548,5 +543,7 @@ root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(),
 root.state("zoomed")
 
 gui = GUI(root)
+controller = Controller(model=None, view=gui)
+gui.bind_controller(controller=controller)
 
 root.mainloop()

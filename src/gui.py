@@ -77,6 +77,17 @@ class GUI(object):
                        }
 
     WELCOME_MESSAGE = "Welcome to the Interventional Radiology Planner and Scheduler."
+    PROCEDURES = {"PROC1": "Procedura 1",
+                  "PROC2": "Procedura 2",
+                  "PROC3": "Procedura 3",
+                  "PROC4": "Procedura 4",
+                  "PROC5": "Procedura 5",
+                  "PROC6": "Procedura 6",
+                  "PROC7": "Procedura 7",
+                  "PROC8": "Procedura 8",
+                  "PROC9": "Procedura 9",
+                  "PROC10": "Procedura 10"
+                  }
 
     class InsertionDialog():
 
@@ -92,38 +103,52 @@ class GUI(object):
                      checkmarks_color):
 
             self.parent_view = parent_view
+            self.procedure_variables = {}
+
+            self.frame_color = frame_color
+            self.section_font = section_font
+            self.elements_font = elements_font
+            self.labels_color = labels_color
+            self.labels_text_color = labels_text_color
+            self.entries_color = entries_color
+            self.checkboxes_color = checkboxes_color
+            self.checkmarks_color = checkmarks_color
 
             self.dialog = ctk.CTkToplevel(fg_color=frame_color)
 
-            dialog_frame = ctk.CTkFrame(master=self.dialog,
-                                        width=100, height=100,
-                                        fg_color=frame_color)
+            general_information_frame = ctk.CTkFrame(master=self.dialog,
+                                                     width=100,
+                                                     height=100,
+                                                     fg_color=frame_color)
 
-            registry_label = ctk.CTkLabel(master=dialog_frame,
+            self.procedures_frame = ctk.CTkFrame(master=self.dialog,
+                                                 fg_color=frame_color)
+
+            registry_label = ctk.CTkLabel(master=general_information_frame,
                                           text="Anagrafica",
                                           font=section_font,
                                           text_color=labels_text_color,
                                           width=10)
-            name_entry = EntryWithLabel(dialog_frame,
+            name_entry = EntryWithLabel(general_information_frame,
                                         label_text="Nome",
                                         frame_color=frame_color,
                                         label_color=labels_color,
                                         label_text_color=labels_text_color,
                                         entry_color=entries_color)
-            surname_entry = EntryWithLabel(dialog_frame,
+            surname_entry = EntryWithLabel(general_information_frame,
                                            label_text="Cognome",
                                            frame_color=frame_color,
                                            label_color=labels_color,
                                            label_text_color=labels_text_color,
                                            entry_color=entries_color)
 
-            planning_label = ctk.CTkLabel(master=dialog_frame,
+            planning_label = ctk.CTkLabel(master=general_information_frame,
                                           text="Pianificazione",
                                           font=section_font,
                                           text_color=labels_text_color,
                                           width=14)
             waiting_list_date_entry = EntryWithLabel(
-                dialog_frame,
+                general_information_frame,
                 frame_color=frame_color,
                 label_text="Inserimento in lista d'attesa",
                 label_width=24,
@@ -134,7 +159,7 @@ class GUI(object):
             anesthesia = tk.BooleanVar(False)
             infections = tk.BooleanVar(False)
 
-            anesthesia_checkbox = ctk.CTkCheckBox(master=dialog_frame,
+            anesthesia_checkbox = ctk.CTkCheckBox(master=general_information_frame,
                                                   variable=anesthesia,
                                                   border_color="gray90",
                                                   border_width=1,
@@ -144,7 +169,7 @@ class GUI(object):
                                                   font=elements_font,
                                                   checkmark_color=checkmarks_color,
                                                   fg_color=checkboxes_color)
-            infections_checkbox = ctk.CTkCheckBox(master=dialog_frame,
+            infections_checkbox = ctk.CTkCheckBox(master=general_information_frame,
                                                   variable=infections,
                                                   border_color="gray90",
                                                   border_width=1,
@@ -155,7 +180,7 @@ class GUI(object):
                                                   checkmark_color=checkmarks_color,
                                                   fg_color=checkboxes_color)
 
-            confirm_button = ctk.CTkButton(master=dialog_frame,
+            confirm_button = ctk.CTkButton(master=general_information_frame,
                                            text="Conferma",
                                            fg_color=checkboxes_color,
                                            hover_color="#1265EA",
@@ -165,7 +190,10 @@ class GUI(object):
                                            corner_radius=3,
                                            command=self.save_patient)
 
-            dialog_frame.pack()
+            self.create_procedure_panel()
+
+            general_information_frame.pack(side=tk.LEFT)
+            self.procedures_frame.pack(side=tk.RIGHT, fill=tk.Y)
 
             registry_label.pack(side=tk.TOP,
                                 anchor=tk.W,
@@ -196,6 +224,43 @@ class GUI(object):
                                 anchor=tk.E,
                                 padx=(0, 20),
                                 pady=(0, 20))
+
+        def create_procedure_panel(self):
+            procedures_label = ctk.CTkLabel(master=self.procedures_frame,
+                                            text="Procedure",
+                                            font=self.section_font,
+                                            text_color=self.labels_text_color,
+                                            width=10)
+
+            procedures_label.pack(side=tk.TOP, anchor=tk.NW)
+
+            checkboxes_per_row = 4
+            total_checkboxes = 0
+            row_frame = ctk.CTkFrame(master=self.procedures_frame,
+                                     fg_color=self.frame_color)
+            for procedure in self.parent_view.PROCEDURES.items():
+                procedure_variable = tk.BooleanVar(False)
+                self.procedure_variables[procedure[0]] = procedure_variable
+                procedure_checkbox = ctk.CTkCheckBox(master=row_frame,
+                                                     variable=procedure_variable,
+                                                     border_color="gray90",
+                                                     border_width=1,
+                                                     hover=False,
+                                                     text=procedure[1],
+                                                     text_color=self.labels_text_color,
+                                                     font=self.elements_font,
+                                                     checkmark_color=self.checkmarks_color,
+                                                     fg_color=self.checkboxes_color)
+                procedure_checkbox.pack(
+                    side=tk.LEFT, anchor=tk.W, padx=(0, 20))
+                total_checkboxes += 1
+
+                if total_checkboxes % checkboxes_per_row == 0:
+                    row_frame.pack(side=tk.TOP, padx=(20, 0), pady=(20, 20))
+                    row_frame = ctk.CTkFrame(master=self.procedures_frame,
+                                             fg_color=self.frame_color)
+
+            row_frame.pack(side=tk.TOP, padx=(20, 20), pady=(20, 20), fill=tk.X)
 
         def save_patient(self):
             print("save!")

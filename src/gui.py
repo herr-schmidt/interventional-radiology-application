@@ -74,22 +74,22 @@ class GUI(object):
                        "Anestesia": [],
                        "Infezioni": [],
                        "Data inserimento in lista": [],
-                      }
+                       }
 
     WELCOME_MESSAGE = "Welcome to the Interventional Radiology Planner and Scheduler."
 
     class InsertionDialog():
 
         def __init__(self,
-        parent_view,
-         frame_color,
-          section_font,
-           elements_font,
-            labels_color,
-             labels_text_color,
-              entries_color,
-               checkboxes_color,
-                checkmarks_color):
+                     parent_view,
+                     frame_color,
+                     section_font,
+                     elements_font,
+                     labels_color,
+                     labels_text_color,
+                     entries_color,
+                     checkboxes_color,
+                     checkmarks_color):
 
             self.parent_view = parent_view
 
@@ -200,7 +200,6 @@ class GUI(object):
         def save_patient(self):
             print("save!")
 
-
     def __init__(self, master):
         self.master = master
 
@@ -221,15 +220,17 @@ class GUI(object):
 
         # left toolbar frame
         self.toolbar_frame = ctk.CTkFrame(master=self.master,
-                                          fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
+                                          fg_color=(self.THEME1_COLOR2,
+                                                    self.THEME2_COLOR2),
                                           corner_radius=0)
         self.toolbar_frame.pack(side=tk.LEFT, fill=tk.Y, expand=False)
 
         # log output and footer
         self.right_frame = ctk.CTkFrame(master=self.master,
-                                        fg_color=(self.THEME1_COLOR1, self.THEME2_COLOR1),
+                                        fg_color=(self.THEME1_COLOR1,
+                                                  self.THEME2_COLOR1),
                                         corner_radius=0)
-        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)  
+        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
         self.create_toolbar()
         self.create_summary_frame()
@@ -250,7 +251,8 @@ class GUI(object):
         right_x_pad = 150
 
         summary_label = ctk.CTkLabel(master=self.summary_frame,
-                                     fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
+                                     fg_color=(self.THEME1_COLOR2,
+                                               self.THEME2_COLOR2),
                                      text="Riepilogo pazienti",
                                      font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
         summary_label.pack(side=tk.TOP,
@@ -259,7 +261,8 @@ class GUI(object):
                            pady=(20, 0))
 
         total_patients_label = ctk.CTkLabel(master=self.summary_frame,
-                                            fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
+                                            fg_color=(self.THEME1_COLOR2,
+                                                      self.THEME2_COLOR2),
                                             text="Pazienti totali: ",
                                             font=self.SOURCE_SANS_PRO_SMALL)
         total_patients_label.pack(side=tk.TOP,
@@ -268,7 +271,8 @@ class GUI(object):
                                   pady=(0, 0))
 
         total_anesthesia_patients_label = ctk.CTkLabel(master=self.summary_frame,
-                                                       fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
+                                                       fg_color=(self.THEME1_COLOR2,
+                                                                 self.THEME2_COLOR2),
                                                        text="Pazienti con anestesia: ",
                                                        font=self.SOURCE_SANS_PRO_SMALL)
         total_anesthesia_patients_label.pack(side=tk.TOP,
@@ -277,7 +281,8 @@ class GUI(object):
                                              pady=(0, 0))
 
         total_infectious_patients_label = ctk.CTkLabel(master=self.summary_frame,
-                                                       fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
+                                                       fg_color=(self.THEME1_COLOR2,
+                                                                 self.THEME2_COLOR2),
                                                        text="Pazienti con infezioni in atto: ",
                                                        font=self.SOURCE_SANS_PRO_SMALL)
         total_infectious_patients_label.pack(side=tk.TOP,
@@ -286,30 +291,33 @@ class GUI(object):
                                              pady=(0, 0))
 
         solver_label = ctk.CTkLabel(master=self.summary_frame,
-                                     fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
-                                     text="Riepilogo impostazioni solver",
-                                     font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
+                                    fg_color=(self.THEME1_COLOR2,
+                                              self.THEME2_COLOR2),
+                                    text="Riepilogo impostazioni solver",
+                                    font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
         solver_label.pack(side=tk.TOP,
-                           anchor=tk.W,
-                           padx=(20, right_x_pad),
-                           pady=(20, 0))
+                          anchor=tk.W,
+                          padx=(20, right_x_pad),
+                          pady=(20, 0))
 
         gap_label = ctk.CTkLabel(master=self.summary_frame,
-                                                       fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
-                                                       text="Gap (%): ",
-                                                       font=self.SOURCE_SANS_PRO_SMALL)
+                                 fg_color=(self.THEME1_COLOR2,
+                                           self.THEME2_COLOR2),
+                                 text="Gap (%): ",
+                                 font=self.SOURCE_SANS_PRO_SMALL)
         gap_label.pack(side=tk.TOP,
-                                             anchor=tk.W,
-                                             padx=(20, right_x_pad),
-                                             pady=(0, 0))
+                       anchor=tk.W,
+                       padx=(20, right_x_pad),
+                       pady=(0, 0))
         time_limit_label = ctk.CTkLabel(master=self.summary_frame,
-                                                       fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
-                                                       text="Timeout (s): ",
-                                                       font=self.SOURCE_SANS_PRO_SMALL)
+                                        fg_color=(self.THEME1_COLOR2,
+                                                  self.THEME2_COLOR2),
+                                        text="Timeout (s): ",
+                                        font=self.SOURCE_SANS_PRO_SMALL)
         time_limit_label.pack(side=tk.TOP,
-                                             anchor=tk.W,
-                                             padx=(20, right_x_pad),
-                                             pady=(0, 0))
+                              anchor=tk.W,
+                              padx=(20, right_x_pad),
+                              pady=(0, 0))
 
     def create_toolbar(self):
 
@@ -398,7 +406,8 @@ class GUI(object):
                               padx=(0, 0),
                               pady=(0, 0)
                               ):
-        icon = ctk.CTkImage(Image.open(theme1_icon_path), Image.open(theme2_icon_path))
+        icon = ctk.CTkImage(Image.open(theme1_icon_path),
+                            Image.open(theme2_icon_path))
 
         button = ctk.CTkButton(
             master=self.toolbar_frame,
@@ -427,25 +436,33 @@ class GUI(object):
 
     def add_patient(self):
         dialog = self.InsertionDialog(parent_view=self,
-                                 frame_color=(self.WHITE, self.THEME2_COLOR2),
-                                 section_font=self.SOURCE_SANS_PRO_MEDIUM,
-                                 elements_font=self.SOURCE_SANS_PRO_SMALL,
-                                 labels_color=(self.WHITE, self.THEME2_COLOR2),
-                                 labels_text_color=(self.BLACK, self.WHITE),
-                                 entries_color=(self.THEME1_COLOR1, self.THEME2_COLOR1),
-                                 checkmarks_color=self.WHITE,
-                                 checkboxes_color=self.CRAYON_BLUE)
+                                      frame_color=(self.WHITE,
+                                                   self.THEME2_COLOR2),
+                                      section_font=self.SOURCE_SANS_PRO_MEDIUM,
+                                      elements_font=self.SOURCE_SANS_PRO_SMALL,
+                                      labels_color=(self.WHITE,
+                                                    self.THEME2_COLOR2),
+                                      labels_text_color=(self.BLACK,
+                                                         self.WHITE),
+                                      entries_color=(self.THEME1_COLOR1,
+                                                     self.THEME2_COLOR1),
+                                      checkmarks_color=self.WHITE,
+                                      checkboxes_color=self.CRAYON_BLUE)
 
     def edit_patient(self):
         dialog = self.InsertionDialog(parent_view=self,
-                                 frame_color=(self.WHITE, self.THEME2_COLOR2),
-                                 section_font=self.SOURCE_SANS_PRO_MEDIUM,
-                                 elements_font=self.SOURCE_SANS_PRO_SMALL,
-                                 labels_color=(self.WHITE, self.THEME2_COLOR2),
-                                 labels_text_color=(self.BLACK, self.WHITE),
-                                 entries_color=(self.THEME1_COLOR1, self.THEME2_COLOR1),
-                                 checkmarks_color=self.WHITE,
-                                 checkboxes_color=self.CRAYON_BLUE)
+                                      frame_color=(self.WHITE,
+                                                   self.THEME2_COLOR2),
+                                      section_font=self.SOURCE_SANS_PRO_MEDIUM,
+                                      elements_font=self.SOURCE_SANS_PRO_SMALL,
+                                      labels_color=(self.WHITE,
+                                                    self.THEME2_COLOR2),
+                                      labels_text_color=(self.BLACK,
+                                                         self.WHITE),
+                                      entries_color=(self.THEME1_COLOR1,
+                                                     self.THEME2_COLOR1),
+                                      checkmarks_color=self.WHITE,
+                                      checkboxes_color=self.CRAYON_BLUE)
 
     def close_active_tab(self):
         active_tab = self.notebook.get()
@@ -488,7 +505,8 @@ class GUI(object):
 
     def create_notebook(self):
         self.notebook = ctk.CTkTabview(self.right_frame,
-                                       fg_color=(self.WHITE, self.THEME2_COLOR2),
+                                       fg_color=(self.WHITE,
+                                                 self.THEME2_COLOR2),
                                        segmented_button_selected_color=self.CRAYON_BLUE,
                                        segmented_button_selected_hover_color=self.DARK_CRAYON_BLUE)
         self.notebook.pack(side=tk.TOP,
@@ -523,7 +541,8 @@ class GUI(object):
 
     def create_log_text_box(self):
         self.text_box = ctk.CTkTextbox(master=self.right_frame,
-                                       fg_color=(self.WHITE, self.THEME2_COLOR2),
+                                       fg_color=(self.WHITE,
+                                                 self.THEME2_COLOR2),
                                        text_color=(self.BLACK, self.WHITE),
                                        font=self.SOURCE_SANS_PRO_SMALL)
         self.text_box.pack(side=tk.TOP,

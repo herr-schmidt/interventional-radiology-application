@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 class Controller():
 
     DEFAULT_TAB_NAME = "Lista pazienti "
@@ -20,12 +21,14 @@ class Controller():
         tab_name = self.get_tab_name()
 
         import_data_frame = pd.read_excel(selected_file.name)
-        self.view.initialize_input_table(tab_name=tab_name, data_frame=import_data_frame)
+        self.view.initialize_input_table(tab_name=tab_name,
+                                         data_frame=import_data_frame)
 
     def create_empty_planning(self):
         tab_name = self.get_tab_name()
 
-        self.view.initialize_input_table(tab_name=tab_name, data_frame=None)
+        self.view.initialize_input_table(tab_name=tab_name,
+                                         data_frame=None)
 
     def get_tab_name(self):
         tab_name = self.DEFAULT_TAB_NAME + str(self.planning_number)

@@ -34,18 +34,29 @@ class EntryWithLabel(ctk.CTkFrame):
                  entry_color,
                  entry_width=200,
                  label_width=10,
-                 font=("Source Sans Pro", 14)):
+                 entry_border_width=1,
+                 entry_font=("Source Sans Pro", 14),
+                 entry_state=ctk.NORMAL,
+                 label_font=("Source Sans Pro", 14),
+                 label_side=ctk.TOP,
+                 label_anchor=ctk.W,
+                 entry_side=ctk.TOP,
+                 entry_anchor=ctk.W,
+                 **kwargs):
         super(EntryWithLabel, self).__init__(master=master,
-                                             width=200,
-                                             fg_color=frame_color)
+                                             fg_color=frame_color,
+                                             **kwargs)
 
         self.entry_variable = ctk.StringVar()
         self.entry = ctk.CTkEntry(master=self,
                                   textvariable=self.entry_variable,
                                   width=entry_width,
-                                  border_width=1,
-                                  border_color="gray90",
-                                  fg_color=entry_color)
+                                  border_width=entry_border_width,
+                                  border_color="gray80",
+                                  state=entry_state,
+                                  fg_color=entry_color,
+                                  font=entry_font
+                                  )
 
         self.label = ctk.CTkLabel(master=self,
                                   text=label_text,
@@ -53,10 +64,17 @@ class EntryWithLabel(ctk.CTkFrame):
                                   anchor=ctk.W,
                                   text_color=label_text_color,
                                   fg_color=label_color,
-                                  font=font)
+                                  font=label_font)
 
-        self.label.pack(side=ctk.TOP, anchor=ctk.W)
-        self.entry.pack(side=ctk.LEFT)
+        self.label_side = label_side
+        self.label_anchor = label_anchor
+        self.entry_side = entry_side
+        self.entry_anchor = entry_anchor
+
+    def pack(self, **kwargs):
+        ctk.CTkFrame.pack(self, **kwargs)
+        self.label.pack(side=self.label_side, anchor=self.label_anchor)
+        self.entry.pack(side=self.entry_side, anchor=self.entry_anchor)
 
     def destroy(self):
         self.entry.destroy()
@@ -75,7 +93,8 @@ class GUI(object):
     CRAYON_BLUE = "#287CFA"
     DARK_CRAYON_BLUE = "#1265EA"
     THEME1_COLOR1 = "#F4F4F8"
-    THEME1_COLOR2 = "#DBDBDB"
+    THEME1_COLOR2 = "#FFFFFF"
+    # THEME1_COLOR2 = "#DBDBDB"
 
     THEME2_COLOR1 = "#565766"
     THEME2_COLOR2 = "#342E37"
@@ -137,7 +156,8 @@ class GUI(object):
 
         def __init__(self,
                      parent_view,
-                     frame_color,
+                     frame_color_1,
+                     frame_color_2,
                      section_font,
                      elements_font,
                      labels_color,
@@ -149,7 +169,8 @@ class GUI(object):
             self.parent_view = parent_view
             self.procedure_variables = {}
 
-            self.frame_color = frame_color
+            self.frame_color_1 = frame_color_1
+            self.frame_color_2 = frame_color_2
             self.section_font = section_font
             self.elements_font = elements_font
             self.labels_color = labels_color
@@ -158,105 +179,54 @@ class GUI(object):
             self.checkboxes_color = checkboxes_color
             self.checkmarks_color = checkmarks_color
 
-            self.dialog = ctk.CTkToplevel(fg_color=frame_color)
+            self.dialog = ctk.CTkToplevel(fg_color=frame_color_1)
 
             self.procedure_checkboxes = []
             self.checkbox_frames = []
-            self.checkboxes_per_row = 6
-            self.checkbox_frames_number = ceil(
-                len(self.parent_view.PROCEDURES.items()) / self.checkboxes_per_row)
-
-            self.general_information_frame = ctk.CTkFrame(master=self.dialog,
-                                                          width=100,
-                                                          height=100,
-                                                          fg_color=frame_color)
+            self.checkboxes_per_row = 4
+            self.checkbox_frames_number = ceil(len(self.parent_view.PROCEDURES.items()) / self.checkboxes_per_row)
 
             self.procedures_frame = ctk.CTkFrame(master=self.dialog,
-                                                 fg_color=frame_color)
+                                                 fg_color=frame_color_1)
+            self.create_registry_frame()
+            self.create_summary_frame()
+            self.create_procedure_frame()
 
-            self.summary_frame = ctk.CTkFrame(master=self.dialog,
-                                              fg_color=frame_color)
+            # self.confirm_button = ctk.CTkButton(master=self.registry_frame,
+            #                                     text="Conferma",
+            #                                     fg_color=checkboxes_color,
+            #                                     hover_color="#1265EA",
+            #                                     font=elements_font,
+            #                                     text_color="#FFFFFF",
+            #                                     width=100,
+            #                                     corner_radius=3,
+            #                                     command=self.save_patient)
 
-            self.summary_label = ctk.CTkLabel(master=self.summary_frame,
-                                              text="Riepilogo paziente",
-                                              font=self.parent_view.SOURCE_SANS_PRO_MEDIUM_BOLD)
+            summary_label = ctk.CTkLabel(master=self.dialog,
+                                         fg_color=self.frame_color_2,
+                                         corner_radius=0,
+                                         text="Riepilogo paziente",
+                                         font=self.parent_view.SOURCE_SANS_PRO_MEDIUM_BOLD)
 
-            self.summary_name_label = ctk.CTkLabel(master=self.summary_frame,
-                                                   text="Nome: ",
-                                                   font=self.parent_view.SOURCE_SANS_PRO_SMALL)
+            self.pack_summary_frame()
+            summary_label.pack(side=ctk.BOTTOM, fill=ctk.X)
+            self.pack_registry_frame()
+            self.pack_procedure_frame()
 
-            self.registry_label = ctk.CTkLabel(master=self.general_information_frame,
-                                               text="Informazioni paziente",
-                                               font=section_font,
-                                               text_color=labels_text_color,
-                                               width=10)
-            self.name_entry = EntryWithLabel(self.general_information_frame,
-                                             label_text="Nome",
-                                             frame_color=frame_color,
-                                             label_color=labels_color,
-                                             label_text_color=labels_text_color,
-                                             entry_color=frame_color)
-            self.surname_entry = EntryWithLabel(self.general_information_frame,
-                                                label_text="Cognome",
-                                                frame_color=frame_color,
-                                                label_color=labels_color,
-                                                label_text_color=labels_text_color,
-                                                entry_color=frame_color)
+            # self.confirm_button.pack(side=ctk.BOTTOM,
+            #                          anchor=ctk.E,
+            #                          padx=(0, 20),
+            #                          pady=(0, 20))
 
-            self.waiting_list_date_entry = EntryWithLabel(
-                self.general_information_frame,
-                frame_color=frame_color,
-                label_text="Inserimento in lista d'attesa",
-                label_width=24,
-                label_color=labels_color,
-                label_text_color=labels_text_color,
-                entry_color=frame_color)
+            # self.summary_label.pack(side=ctk.TOP,
+            #                        anchor=ctk.NW,
+            #                        padx=(20, 150),
+            #                        pady=(0, 0))
 
-            anesthesia = ctk.BooleanVar(False)
-            infections = ctk.BooleanVar(False)
+            self.bind_summary_interaction()
 
-            self.anesthesia_checkbox = ctk.CTkCheckBox(master=self.general_information_frame,
-                                                       variable=anesthesia,
-                                                       border_color="gray90",
-                                                       border_width=1,
-                                                       hover=False,
-                                                       text="Anestesia",
-                                                       text_color=labels_text_color,
-                                                       font=elements_font,
-                                                       checkmark_color=checkmarks_color,
-                                                       fg_color=checkboxes_color,
-                                                       checkbox_height=15,
-                                                       checkbox_width=15,
-                                                       corner_radius=3)
-            self.infections_checkbox = ctk.CTkCheckBox(master=self.general_information_frame,
-                                                       variable=infections,
-                                                       border_color="gray90",
-                                                       border_width=1,
-                                                       hover=False,
-                                                       text="Infezioni in atto",
-                                                       text_color=labels_text_color,
-                                                       font=elements_font,
-                                                       checkmark_color=checkmarks_color,
-                                                       fg_color=checkboxes_color,
-                                                       checkbox_height=15,
-                                                       checkbox_width=15,
-                                                       corner_radius=3)
-
-            self.confirm_button = ctk.CTkButton(master=self.general_information_frame,
-                                                text="Conferma",
-                                                fg_color=checkboxes_color,
-                                                hover_color="#1265EA",
-                                                font=elements_font,
-                                                text_color="#FFFFFF",
-                                                width=100,
-                                                corner_radius=3,
-                                                command=self.save_patient)
-
-            self.create_procedure_panel()
-
-            self.summary_frame.pack(side=ctk.BOTTOM, fill=ctk.X)
-            self.general_information_frame.pack(side=ctk.LEFT, fill=ctk.Y)
-            self.procedures_frame.pack(side=ctk.RIGHT, fill=ctk.Y)
+        def pack_registry_frame(self):
+            self.registry_frame.pack(side=ctk.LEFT, fill=ctk.Y)
 
             self.registry_label.pack(side=ctk.TOP,
                                      anchor=ctk.W,
@@ -280,22 +250,135 @@ class GUI(object):
                                           anchor=ctk.W,
                                           padx=(20, 20),
                                           pady=(0, 20))
-            self.confirm_button.pack(side=ctk.BOTTOM,
-                                     anchor=ctk.E,
-                                     padx=(0, 20),
-                                     pady=(0, 20))
 
-            self.summary_label.pack(side=ctk.TOP,
-                                    anchor=ctk.W,
-                                    padx=(20, 150),
-                                    pady=(0, 0))
 
-            self.summary_name_label.pack(side=ctk.TOP,
-                                         anchor=ctk.W,
-                                         padx=(20, 150),
-                                         pady=(0, 0))
+        def create_registry_entry(self, label_text):
+            return EntryWithLabel(self.registry_frame,
+                                  label_text=label_text,
+                                  frame_color=self.frame_color_1,
+                                  label_color=self.labels_color,
+                                  label_text_color=self.labels_text_color,
+                                  entry_color=self.frame_color_1)
 
-        def create_procedure_panel(self):
+        def create_registry_checkbox(self, label_text):
+            variable = ctk.BooleanVar(False)
+            return ctk.CTkCheckBox(master=self.registry_frame,
+                                                       variable=variable,
+                                                       border_color="gray80",
+                                                       border_width=1,
+                                                       hover=False,
+                                                       text=label_text,
+                                                       text_color=self.labels_text_color,
+                                                       font=self.elements_font,
+                                                       checkmark_color=self.checkmarks_color,
+                                                       fg_color=self.checkboxes_color,
+                                                       checkbox_height=15,
+                                                       checkbox_width=15,
+                                                       corner_radius=3)
+
+        def create_registry_frame(self):
+            self.registry_frame = ctk.CTkFrame(master=self.dialog,
+                                               width=100,
+                                               height=100,
+                                               fg_color=self.frame_color_1)
+
+            self.registry_label = ctk.CTkLabel(master=self.registry_frame,
+                                               text="Informazioni paziente",
+                                               font=self.section_font,
+                                               text_color=self.labels_text_color,
+                                               width=10)
+            self.name_entry = self.create_registry_entry(label_text="Nome")
+            self.surname_entry = self.create_registry_entry(label_text="Cognome")
+            self.waiting_list_date_entry = self.create_registry_entry(label_text="Inserimento in lista d'attesa")
+
+            self.anesthesia_checkbox = self.create_registry_checkbox(label_text="Anestesia")
+            self.infections_checkbox = self.create_registry_checkbox(label_text="Infezioni in atto")
+
+        def bind_summary_interaction(self):
+            self.name_entry.entry_variable.trace_add(mode="write",
+                                                     callback=lambda *_,
+                                                     var=self.name_entry.entry_variable,
+                                                     summary_var=self.summary_name_entry.entry_variable: self.update_summary(var, summary_var))
+            self.surname_entry.entry_variable.trace_add(mode="write",
+                                                     callback=lambda *_,
+                                                     var=self.surname_entry.entry_variable,
+                                                     summary_var=self.summary_surname_entry.entry_variable: self.update_summary(var, summary_var))
+            self.waiting_list_date_entry.entry_variable.trace_add(mode="write",
+                                                     callback=lambda *_,
+                                                     var=self.waiting_list_date_entry.entry_variable,
+                                                     summary_var=self.summary_date_entry.entry_variable: self.update_summary(var, summary_var))
+
+        def update_summary(self, var, summary_var):
+            summary_var.set(var.get())
+
+        def pack_summary_frame(self):
+            self.summary_frame.pack(side=ctk.BOTTOM, fill=ctk.BOTH)
+            self.summary_registry_frame.pack(side=ctk.LEFT, fill=ctk.X)
+            self.summary_procedure_frame.pack(side=ctk.LEFT, fill=ctk.BOTH)
+
+            self.pack_summary_entry(self.summary_name_entry)
+            self.pack_summary_entry(self.summary_surname_entry)
+            self.pack_summary_entry(self.summary_date_entry)
+            self.pack_summary_entry(self.summary_anesthesia_entry)
+            self.pack_summary_entry(self.summary_infections_entry)
+
+            self.pack_summary_entry(self.summary_procedures_label, padx=(10, 0))
+
+        def pack_summary_entry(self, summary_label, padx=(20, 10)):
+            summary_label.pack(side=ctk.TOP,
+                               anchor=ctk.W,
+                               padx=padx,
+                               pady=(0, 0),
+                               fill=ctk.X)
+
+        def create_summary_frame(self):
+            self.summary_frame = ctk.CTkFrame(master=self.dialog,
+                                              fg_color=self.frame_color_2,
+                                              corner_radius=0)
+
+            self.summary_registry_frame = ctk.CTkFrame(master=self.summary_frame,
+                                                       fg_color=self.frame_color_2,
+                                                       width=300,
+                                                       corner_radius=0)
+
+            self.summary_name_entry = self.create_summary_entry("Nome: ")
+            self.summary_surname_entry = self.create_summary_entry("Cognome: ")
+            self.summary_date_entry = self.create_summary_entry("Inserimento in lista: ")
+            self.summary_anesthesia_entry = self.create_summary_entry("Anestesia: ")
+            self.summary_infections_entry = self.create_summary_entry("Infezioni in atto: ")
+
+            self.summary_procedure_frame = ctk.CTkFrame(master=self.summary_frame,
+                                                        fg_color=self.frame_color_2,
+                                                        corner_radius=0)
+
+            self.summary_procedures_label = ctk.CTkLabel(master=self.summary_procedure_frame,
+                                                         text="Procedure:",
+                                                         font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                                         text_color=self.labels_text_color,
+                                                         width=10)
+
+        def create_summary_entry(self, label_text):
+            return EntryWithLabel(master=self.summary_registry_frame,
+                                  label_text=label_text,
+                                  label_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                  entry_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                  frame_color=self.frame_color_2,
+                                  label_color=self.frame_color_2,
+                                  label_text_color=self.labels_text_color,
+                                  entry_color=self.frame_color_2,
+                                  entry_border_width=0,
+                                  entry_state=ctk.DISABLED,
+                                  entry_width=140,
+                                  label_side=ctk.LEFT,
+                                  label_anchor=ctk.W,
+                                  entry_side=ctk.RIGHT,
+                                  entry_anchor=ctk.E)
+
+        def pack_procedure_frame(self):
+            self.procedures_frame.pack(side=ctk.RIGHT, fill=ctk.Y)
+            self.pack_procedure_checkboxes()
+
+        def create_procedure_frame(self):
             procedures_label = ctk.CTkLabel(master=self.procedures_frame,
                                             text="Prestazioni",
                                             font=self.section_font,
@@ -306,10 +389,10 @@ class GUI(object):
 
             procedures_label_searchbox = EntryWithLabel(master=self.procedures_frame,
                                                         label_text="Filtra per nome",
-                                                        frame_color=self.frame_color,
+                                                        frame_color=self.frame_color_1,
                                                         label_color=self.labels_color,
                                                         label_text_color=self.labels_text_color,
-                                                        entry_color=self.frame_color)
+                                                        entry_color=self.frame_color_1)
 
             procedures_label_searchbox.entry_variable.trace_add(mode="write",
                                                                 callback=lambda *_,
@@ -322,10 +405,10 @@ class GUI(object):
         def initialize_procedure_checkboxes(self):
             for _ in range(0, self.checkbox_frames_number):
                 row_frame = ctk.CTkFrame(master=self.procedures_frame,
-                                         fg_color=self.frame_color)
+                                         fg_color=self.frame_color_1)
                 row_frame.pack(side=ctk.TOP,
                                padx=(20, 0),
-                               pady=(20, 20),
+                               pady=(0, 0),
                                fill=ctk.X)
                 self.checkbox_frames.append(row_frame)
 
@@ -333,11 +416,9 @@ class GUI(object):
                 procedure_variable = ctk.BooleanVar(False)
                 self.procedure_variables[procedure[0]] = procedure_variable
 
-            self.pack_checkboxes(procedures=list(
-                self.parent_view.PROCEDURES.items()))
+            self.create_procedure_checkboxes(procedures=list(self.parent_view.PROCEDURES.items()))
 
         def save_patient(self):
-
             self.dialog.destroy()
 
         def filter_procedures(self, var):
@@ -350,9 +431,16 @@ class GUI(object):
                     if re.search(pattern.lower(), procedure[1].lower()) is not None:
                         filtered_procedures.append(procedure)
 
-            self.pack_checkboxes(procedures=filtered_procedures)
+            self.create_procedure_checkboxes(procedures=filtered_procedures)
+            self.pack_procedure_checkboxes()
 
-        def pack_checkboxes(self, procedures):
+        def pack_procedure_checkboxes(self):
+            for checkbox in self.procedure_checkboxes:
+                checkbox.pack(side=ctk.LEFT,
+                              anchor=ctk.W,
+                              padx=(0, 20))
+
+        def create_procedure_checkboxes(self, procedures):
             if len(procedures) == len(self.procedure_checkboxes):
                 return
 
@@ -368,7 +456,7 @@ class GUI(object):
                     procedure_variable = self.procedure_variables[procedure[0]]
                     procedure_checkbox = ctk.CTkCheckBox(master=frame,
                                                          variable=procedure_variable,
-                                                         border_color="gray90",
+                                                         border_color="gray80",
                                                          border_width=1,
                                                          hover=False,
                                                          text=procedure[1],
@@ -378,10 +466,8 @@ class GUI(object):
                                                          fg_color=self.checkboxes_color,
                                                          checkbox_height=15,
                                                          checkbox_width=15,
-                                                         corner_radius=3)
-                    procedure_checkbox.pack(side=ctk.LEFT,
-                                            anchor=ctk.W,
-                                            padx=(0, 20))
+                                                         corner_radius=3,
+                                                         width=90)
                     self.procedure_checkboxes.append(procedure_checkbox)
                     frame_checkboxes += 1
 
@@ -624,8 +710,10 @@ class GUI(object):
 
     def add_patient(self):
         self.InsertionDialog(parent_view=self,
-                             frame_color=(self.WHITE,
-                                          self.THEME2_COLOR2),
+                             frame_color_1=(self.WHITE,
+                                         self.THEME2_COLOR2),
+                             frame_color_2=(self.THEME1_COLOR1,
+                                         self.THEME2_COLOR1),
                              section_font=self.SOURCE_SANS_PRO_MEDIUM,
                              elements_font=self.SOURCE_SANS_PRO_SMALL,
                              labels_color=(self.WHITE,
@@ -639,8 +727,10 @@ class GUI(object):
 
     def edit_patient(self):
         dialog = self.InsertionDialog(parent_view=self,
-                                      frame_color=(self.WHITE,
+                                      frame_color_1=(self.WHITE,
                                                    self.THEME2_COLOR2),
+                                      frame_color_2=(self.THEME1_COLOR1,
+                                                   self.THEME2_COLOR1),
                                       section_font=self.SOURCE_SANS_PRO_MEDIUM,
                                       elements_font=self.SOURCE_SANS_PRO_SMALL,
                                       labels_color=(self.WHITE,

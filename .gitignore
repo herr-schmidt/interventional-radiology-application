@@ -130,3 +130,4 @@ dmypy.json
 
 # project's folders to ignore
 log/
+.vscode/launch.json

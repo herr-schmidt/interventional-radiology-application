@@ -4,18 +4,18 @@ import tkinter as tk
 import customtkinter as ctk
 import tkinter.font as tkFont
 import pandas as pd
-import enum
+from enum import Enum
 from math import ceil, floor
 
 
-class FitCriterion(enum.Enum):
+class FitCriterion(Enum):
     DEFAULT = 0
     FIT_COL_MAX_LENGTH = 1
     FIT_HEADER = 2
     FIT_HEADER_AND_COL_MAX_LENGTH = 3
 
 
-class Background(enum.Enum):
+class Background(Enum):
     DEFAULT = 0
     SELECT = 1
     HOVER = 2
@@ -203,6 +203,16 @@ class Table(ctk.CTkFrame):
                              height=32,
                              command=command)
 
+    # updates the selected row substituting new_row to it in the underlying pandas dataframe
+    def update_selected_row(self, new_row):
+        self.data_frame.iloc[self.selected_row] = new_row
+        self.draw_table()
+
+    # updates the selected row substituting new_row to it in the underlying pandas dataframe
+    def add_row(self, new_row):
+        self.data_frame.loc[len(self.data_frame)] = new_row
+        self.draw_table()
+
     def switch_theme(self, new_theme):
         self.theme = new_theme
         self.set_colors()
@@ -324,7 +334,7 @@ class Table(ctk.CTkFrame):
         self.draw_table()
 
     def compute_last_page_index(self):
-        return ceil(self.rows / self.pagination_size) - 1
+        return ceil(len(self.data_frame) / self.pagination_size) - 1
 
     def next_page(self):
         if self.current_page == self.compute_last_page_index():

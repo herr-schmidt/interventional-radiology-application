@@ -1,3 +1,5 @@
+from enum import Enum
+
 class StdoutRedirector(object):
 
     def __init__(self, text_widget):
@@ -9,3 +11,7 @@ class StdoutRedirector(object):
 
     def flush(self):
         pass
+
+class DialogMode(Enum):
+    ADD = 0
+    EDIT = 1

@@ -8,7 +8,7 @@ import customtkinter as ctk
 from bootstraptable import Table, FitCriterion
 from controller import Controller
 from math import ceil
-from util import StdoutRedirector
+from util import StdoutRedirector, DialogMode
 
 
 class EntryWithLabel(ctk.CTkFrame):
@@ -154,7 +154,8 @@ class GUI(object):
                      labels_text_color,
                      entries_color,
                      checkboxes_color,
-                     checkmarks_color):
+                     checkmarks_color,
+                     mode=DialogMode.ADD):
 
             self.parent_view = parent_view
             self.procedure_variables = {}
@@ -176,37 +177,58 @@ class GUI(object):
             self.checkboxes_per_row = 4
             self.checkbox_frames_number = ceil(len(self.parent_view.PROCEDURES.items()) / self.checkboxes_per_row)
 
+            self.mode = mode
+
             self.summary_procedures_labels = {}
 
             self.create_registry_frame()
             self.create_summary_frame()
             self.create_procedure_frame()
+            self.create_buttons()
 
-            # self.confirm_button = ctk.CTkButton(master=self.registry_frame,
-            #                                     text="Conferma",
-            #                                     fg_color=checkboxes_color,
-            #                                     hover_color="#1265EA",
-            #                                     font=elements_font,
-            #                                     text_color="#FFFFFF",
-            #                                     width=100,
-            #                                     corner_radius=3,
-            #                                     command=self.save_patient)
-
+            self.pack_buttons()
             self.pack_summary_frame()
             self.pack_registry_frame()
             self.pack_procedure_frame()
 
-            # self.confirm_button.pack(side=ctk.BOTTOM,
-            #                          anchor=ctk.E,
-            #                          padx=(0, 20),
-            #                          pady=(0, 20))
-
-            # self.summary_label.pack(side=ctk.TOP,
-            #                        anchor=ctk.NW,
-            #                        padx=(20, 150),
-            #                        pady=(0, 0))
-
             self.bind_summary_interaction()
+
+        def pack_buttons(self):
+            self.button_frame.pack(side=ctk.BOTTOM, fill=ctk.X)
+            self.confirm_button.pack(side=ctk.RIGHT,
+                                     anchor=ctk.E,
+                                     padx=(0, 20),
+                                     pady=(0, 20))
+
+            self.cancel_button.pack(side=ctk.RIGHT,
+                                     anchor=ctk.E,
+                                     padx=(0, 20),
+                                     pady=(0, 20))
+
+        def create_buttons(self):
+            self.button_frame = ctk.CTkFrame(master=self.dialog,
+                                             width=100,
+                                             height=100,
+                                             fg_color=self.frame_color_1)
+            self.confirm_button = ctk.CTkButton(master=self.button_frame,
+                                                text="Conferma",
+                                                fg_color=self.checkboxes_color,
+                                                hover_color="#1265EA",
+                                                font=self.elements_font,
+                                                text_color="#FFFFFF",
+                                                width=80,
+                                                corner_radius=3,
+                                                command=self.save_patient)
+
+            self.cancel_button = ctk.CTkButton(master=self.button_frame,
+                                                text="Annulla",
+                                                fg_color=self.checkboxes_color,
+                                                hover_color="#1265EA",
+                                                font=self.elements_font,
+                                                text_color="#FFFFFF",
+                                                width=80,
+                                                corner_radius=3,
+                                                command=self.cancel)
 
         def pack_registry_frame(self):
             self.registry_frame.pack(side=ctk.LEFT, fill=ctk.Y,
@@ -288,8 +310,7 @@ class GUI(object):
                                                text_color=self.labels_text_color,
                                                width=10)
             self.name_entry = self.create_registry_entry(label_text="Nome")
-            self.surname_entry = self.create_registry_entry(
-                label_text="Cognome")
+            self.surname_entry = self.create_registry_entry(label_text="Cognome")
             self.waiting_list_date_entry = self.create_registry_entry(label_text="Inserimento in lista d'attesa")
 
             self.anesthesia_checkbox = self.create_registry_checkbox(label_text="Anestesia")
@@ -331,8 +352,9 @@ class GUI(object):
             self.pack_summary_entry(self.summary_anesthesia_entry)
             self.pack_summary_entry(self.summary_infections_entry)
 
-            self.pack_summary_entry(
-                self.summary_procedures_label, padx=(10, 0), fill=None)
+            self.pack_summary_entry(self.summary_procedures_label,
+                                    padx=(10, 0),
+                                    fill=None)
 
         def pack_summary_entry(self, summary_label, padx=(20, 10), fill=ctk.X):
             summary_label.pack(side=ctk.TOP,
@@ -454,8 +476,44 @@ class GUI(object):
             self.create_procedure_checkboxes(
                 procedures=list(self.parent_view.PROCEDURES.items()))
 
-        def save_patient(self):
+        def cancel(self):
             self.dialog.destroy()
+
+        def save_patient(self):
+            new_row = self.extract_patient_row()
+
+            active_table_index = self.parent_view.notebook.get()
+            table = self.parent_view.tables[active_table_index]
+            if self.mode == DialogMode.ADD:
+                table.add_row(new_row)
+            elif self.mode == DialogMode.EDIT:
+                table.update_selected_row(new_row)
+
+            self.dialog.destroy()
+
+        # create a list representing a patient from the dialog's fields
+        def extract_patient_row(self):
+            patient_row = [""] * 6
+            patient_row[0] = self.name_entry.entry_variable.get()
+            patient_row[1] = self.surname_entry.entry_variable.get()
+            patient_row[2] = self.procedures_as_string()
+            patient_row[3] = self.anesthesia_checkbox.get()
+            patient_row[4] = self.infections_checkbox.get()
+            patient_row[5] = self.waiting_list_date_entry.entry_variable.get()
+
+            return patient_row
+
+        def procedures_as_string(self):
+            r = ""
+            first = True
+            for procedure in self.procedure_checkboxes:
+                if procedure.get() == 1:
+                    if first:
+                        r = r + procedure._text
+                        first = False
+                    else:
+                        r = r + "|" + procedure._text
+            return r
 
         def filter_procedures(self, var):
             pattern = var.get()
@@ -666,16 +724,18 @@ class GUI(object):
                                                            state=ctk.DISABLED,
                                                            )
 
-        self.create_toolbar_button("resources/add-patient.png",
+        self.add_patient_button = self.create_toolbar_button("resources/add-patient.png",
                                    "resources/add-patient_w.png",
                                    self.add_patient,
-                                   text="Aggiungi paziente"
+                                   text="Aggiungi paziente",
+                                   state=ctk.DISABLED
                                    )
 
-        self.create_toolbar_button("resources/edit.png",
+        self.edit_patient_button = self.create_toolbar_button("resources/edit.png",
                                    "resources/edit_w.png",
                                    self.edit_patient,
-                                   text="Modifica paziente selezionato"
+                                   text="Modifica paziente selezionato",
+                                   state=ctk.DISABLED
                                    )
 
         self.create_toolbar_button("resources/run.png",
@@ -784,7 +844,8 @@ class GUI(object):
                                       entries_color=(self.THEME1_COLOR1,
                                                      self.THEME2_COLOR1),
                                       checkmarks_color=self.WHITE,
-                                      checkboxes_color=self.CRAYON_BLUE)
+                                      checkboxes_color=self.CRAYON_BLUE,
+                                      mode=DialogMode.EDIT)
 
     def close_active_tab(self):
         active_tab = self.notebook.get()
@@ -793,6 +854,9 @@ class GUI(object):
 
         if self.tabs == 0:
             self.close_tab_button.configure(state=ctk.DISABLED)
+            self.add_patient_button.configure(state=ctk.DISABLED)
+            if self.edit_patient_button._state == ctk.NORMAL:
+                self.edit_patient_button.configure(state=ctk.DISABLED)
 
     def solve(self):
         pass
@@ -837,6 +901,16 @@ class GUI(object):
                            padx=(20, 10),
                            pady=(0, 10))
 
+    def on_row_interaction(self, event):
+        active_table_index = self.notebook.get()
+        active_table = self.tables[active_table_index]
+        selected_row_index = active_table.selected_row
+        if selected_row_index is not None:
+            self.edit_patient_button.configure(state=ctk.NORMAL)
+        else:
+            if self.edit_patient_button._state == ctk.NORMAL:
+                self.edit_patient_button.configure(state=ctk.DISABLED)
+
     def initialize_input_table(self, tab_name, data_frame):
         if data_frame is None:
             columns = self.PLANNING_HEADER
@@ -845,6 +919,7 @@ class GUI(object):
         input_tab = self.notebook.add(tab_name)
 
         table = Table(master=input_tab,
+                      on_select_command=self.on_row_interaction,
                       data_frame=data_frame,
                       row_height=60,
                       header_height=60,
@@ -860,6 +935,7 @@ class GUI(object):
 
         self.tabs += 1
         self.close_tab_button.configure(state=ctk.NORMAL)
+        self.add_patient_button.configure(state=ctk.NORMAL)
 
     def create_log_text_box(self):
         self.text_box = ctk.CTkTextbox(master=self.right_frame,

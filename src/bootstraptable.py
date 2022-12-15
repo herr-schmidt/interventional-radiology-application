@@ -30,6 +30,7 @@ class Table(ctk.CTkFrame):
     def __init__(self,
                  master,
                  data_frame: pd.DataFrame,
+                 on_select_command=None,
                  width=None,
                  header_height=30,
                  row_height=20,
@@ -64,6 +65,8 @@ class Table(ctk.CTkFrame):
             column_separator_width (int, optional): Width of column separators. Defaults to 1.
         """
         super().__init__(master=master, width=width)
+
+        self.on_select_command = on_select_command
 
         self.horizontal_scrollbar = ctk.CTkScrollbar(master=self,
                                                      orientation=ctk.HORIZONTAL)
@@ -285,6 +288,9 @@ class Table(ctk.CTkFrame):
         self.table_canvas.bind("<Motion>", func=self.on_hover)
         self.table_canvas.bind("<Leave>", func=self.on_leave)
 
+        if self.on_select_command:
+            self.table_canvas.bind("<Button-1>", func=self.on_select_command, add="+")
+
         self.bind("<Configure>", command=self.on_resize)
 
     def on_resize(self, event):
@@ -334,6 +340,8 @@ class Table(ctk.CTkFrame):
         self.draw_table()
 
     def compute_last_page_index(self):
+        if len(self.data_frame) == 0:
+            return 0
         return ceil(len(self.data_frame) / self.pagination_size) - 1
 
     def next_page(self):

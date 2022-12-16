@@ -580,6 +580,13 @@ class Table(ctk.CTkFrame):
             event)[0] + self.current_page * self.pagination_size
         previously_hovered_row = self.hover_row
 
+        # to avoid last row hovering color when page is not full
+        if previously_hovered_row == self.data_frame.shape[0] - 1 and hover_row >= self.data_frame.shape[0]:
+            self.draw_row(previously_hovered_row,
+                          background_type=Background.DEFAULT)
+            self.hover_row = None
+            return
+
         # when on last page we do not want to hover on a non-existing line (empty space)
         if hover_row >= self.data_frame.shape[0]:
             return

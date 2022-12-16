@@ -585,8 +585,8 @@ class GUI(object):
 
         self.dialogs = []
         self.planning_number = 0
-        self.tabs = 0
         self.tables = dict()
+        self.tables_edit_buttons = dict()
 
         self.controller: Controller = None
 
@@ -621,7 +621,8 @@ class GUI(object):
 
     def create_summary_frame(self):
         self.summary_frame = ctk.CTkFrame(master=self.right_frame,
-                                          fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2))
+                                          fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
+                                          corner_radius=3)
         self.summary_frame.pack(side=ctk.RIGHT,
                                 fill=ctk.Y,
                                 expand=False,
@@ -701,54 +702,41 @@ class GUI(object):
 
     def create_toolbar(self):
 
-        self.create_toolbar_button("resources/new.png",
+        self.new_sheet_button = self.create_toolbar_button("resources/new.png",
                                    "resources/new_w.png",
                                    self.new_planning_callback,
-                                   text="Nuova scheda",
-                                   pady=(20, 0)
+                                   "Nuova scheda"
                                    )
-        self.create_toolbar_button("resources/xlsx.png",
+        self.import_excel_button = self.create_toolbar_button("resources/xlsx.png",
                                    "resources/xlsx_w.png",
                                    self.import_callback,
                                    text="Importa da file Excel",
                                    )
-        self.create_toolbar_button("resources/export.png",
-                                   "resources/export_w.png",
-                                   self.export_callback,
-                                   text="Esporta in file Excel",
-                                   )
-        self.close_tab_button = self.create_toolbar_button("resources/delete.png",
-                                                           "resources/delete_w.png",
-                                                           self.close_active_tab,
-                                                           text="Chiudi scheda attiva",
-                                                           state=ctk.DISABLED,
-                                                           )
 
-        self.add_patient_button = self.create_toolbar_button("resources/add-patient.png",
-                                   "resources/add-patient_w.png",
-                                   self.add_patient,
-                                   text="Aggiungi paziente",
-                                   state=ctk.DISABLED
-                                   )
-
-        self.edit_patient_button = self.create_toolbar_button("resources/edit.png",
-                                   "resources/edit_w.png",
-                                   self.edit_patient,
-                                   text="Modifica paziente selezionato",
-                                   state=ctk.DISABLED
-                                   )
-
-        self.create_toolbar_button("resources/run.png",
+        self.run_button = self.create_toolbar_button("resources/run.png",
                                    "resources/run_w.png",
                                    self.launch_solver,
                                    text="Calcola pianificazione"
                                    )
 
-        self.create_toolbar_button("resources/stop.png",
+        self.stop_button = self.create_toolbar_button("resources/stop.png",
                                    "resources/stop_w.png",
                                    self.stop_solver,
                                    text="Interrompi pianificazione"
                                    )
+
+        self.new_sheet_button.pack(side=ctk.TOP,
+                                     expand=False,
+                                    fill=ctk.X)
+        self.import_excel_button.pack(side=ctk.TOP,
+                                     expand=False,
+                                    fill=ctk.X)
+        self.run_button.pack(side=ctk.TOP,
+                                     expand=False,
+                                    fill=ctk.X)
+        self.stop_button.pack(side=ctk.TOP,
+                                     expand=False,
+                                    fill=ctk.X)
 
         self.theme_mode_switch = ctk.CTkSwitch(master=self.toolbar_frame,
                                                text="Modalità notturna",
@@ -780,15 +768,12 @@ class GUI(object):
                               theme2_icon_path,
                               command,
                               text=None,
-                              state=ctk.NORMAL,
-                              padx=(0, 0),
-                              pady=(0, 0)
+                              state=ctk.NORMAL
                               ):
         icon = ctk.CTkImage(Image.open(theme1_icon_path),
                             Image.open(theme2_icon_path))
 
-        button = ctk.CTkButton(
-            master=self.toolbar_frame,
+        button = ctk.CTkButton(master=self.toolbar_frame,
             image=icon,
             command=command,
             state=state,
@@ -799,12 +784,8 @@ class GUI(object):
             text=text,
             text_color=(self.BLACK, self.WHITE),
             font=self.SOURCE_SANS_PRO_SMALL,
-            # width=48,
-            # height=48,
             anchor=ctk.W
         )
-        button.pack(side=ctk.TOP, anchor=ctk.W, expand=False,
-                    fill=ctk.X, padx=padx, pady=pady)
         button.bind("<Enter>", command=self.hover_button, add="+")
 
         return button
@@ -850,13 +831,6 @@ class GUI(object):
     def close_active_tab(self):
         active_tab = self.notebook.get()
         self.notebook.delete(active_tab)
-        self.tabs -= 1
-
-        if self.tabs == 0:
-            self.close_tab_button.configure(state=ctk.DISABLED)
-            self.add_patient_button.configure(state=ctk.DISABLED)
-            if self.edit_patient_button._state == ctk.NORMAL:
-                self.edit_patient_button.configure(state=ctk.DISABLED)
 
     def solve(self):
         pass
@@ -894,7 +868,9 @@ class GUI(object):
                                        fg_color=(self.WHITE,
                                                  self.THEME2_COLOR2),
                                        segmented_button_selected_color=self.CRAYON_BLUE,
-                                       segmented_button_selected_hover_color=self.DARK_CRAYON_BLUE)
+                                       segmented_button_selected_hover_color=self.DARK_CRAYON_BLUE,
+                                       height=500,
+                                       corner_radius=3)
         self.notebook.pack(side=ctk.TOP,
                            expand=True,
                            fill=ctk.BOTH,
@@ -906,10 +882,9 @@ class GUI(object):
         active_table = self.tables[active_table_index]
         selected_row_index = active_table.selected_row
         if selected_row_index is not None:
-            self.edit_patient_button.configure(state=ctk.NORMAL)
+            self.tables_edit_buttons[active_table_index].configure(state=ctk.NORMAL)
         else:
-            if self.edit_patient_button._state == ctk.NORMAL:
-                self.edit_patient_button.configure(state=ctk.DISABLED)
+            self.tables_edit_buttons[active_table_index].configure(state=ctk.DISABLED)
 
     def initialize_input_table(self, tab_name, data_frame):
         if data_frame is None:
@@ -918,32 +893,100 @@ class GUI(object):
 
         input_tab = self.notebook.add(tab_name)
 
+        table_upper_button_frame = ctk.CTkFrame(master=input_tab, fg_color=(self.WHITE, self.THEME2_COLOR2))
+        table_upper_button_frame.pack(side=ctk.TOP, fill=ctk.X)
+
+        close_tab_button = self.create_tabview_button(table_upper_button_frame,
+            "resources/delete.png",
+                                                           "resources/delete_w.png",
+                                                           self.close_active_tab,
+                                                           text="Chiudi scheda"
+                                                           )
+        close_tab_button.pack(side=ctk.RIGHT, expand=False, padx=(2, 0), pady=(5, 5))
+
         table = Table(master=input_tab,
                       on_select_command=self.on_row_interaction,
                       data_frame=data_frame,
-                      row_height=60,
-                      header_height=60,
+                      row_height=40,
+                      header_height=40,
                       fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
                       row_separator_width=1,
                       width=1200,
-                      pagination_size=3,
+                      pagination_size=10,
                       theme=self.theme,
                       even_row_colors=("#ffffff", self.THEME2_COLOR2))
-        table.pack()
+        table.pack(side=ctk.TOP)
 
         self.tables[tab_name] = table
 
-        self.tabs += 1
-        self.close_tab_button.configure(state=ctk.NORMAL)
-        self.add_patient_button.configure(state=ctk.NORMAL)
+        table_lower_button_frame = ctk.CTkFrame(master=input_tab, fg_color=(self.WHITE, self.THEME2_COLOR2))
+        table_lower_button_frame.pack(side=ctk.TOP, fill=ctk.X)
+
+        add_patient_button = self.create_tabview_button(table_lower_button_frame,
+            "resources/add-patient.png",
+                                   "resources/add-patient_w.png",
+                                   self.add_patient,
+                                   text="Aggiungi paziente"
+                                   )
+
+        edit_patient_button = self.create_tabview_button(table_lower_button_frame,
+            "resources/edit.png",
+                                   "resources/edit_w.png",
+                                   self.edit_patient,
+                                   text="Modifica paziente",
+                                   state=ctk.DISABLED
+                                   )
+        export_excel_button = self.create_tabview_button(table_lower_button_frame,
+        "resources/export.png",
+                                   "resources/export_w.png",
+                                   command=self.export_callback,
+                                   text="Esporta in file Excel"
+                                   )
+    
+
+        add_patient_button.pack(side=ctk.LEFT, expand=False, padx=(0, 2), pady=(5, 0))
+        edit_patient_button.pack(side=ctk.LEFT, expand=False, padx=(0, 0), pady=(5, 0))
+        export_excel_button.pack(side=ctk.RIGHT, expand=False, padx=(0, 0), pady=(5, 0))
+
+        self.tables_edit_buttons[tab_name] = edit_patient_button
+
+    def create_tabview_button(self,
+    table_button_frame,
+    theme1_icon_path,
+    theme2_icon_path,
+    command=None,
+    state=ctk.NORMAL,
+    text=""):
+        icon = ctk.CTkImage(Image.open(theme1_icon_path), Image.open(theme2_icon_path))
+
+        button = ctk.CTkButton(master=table_button_frame,
+            image=icon,
+            command=command,
+            state=state,
+            fg_color=(self.WHITE, self.THEME2_COLOR2),
+            hover_color=(self.THEME1_COLOR1, self.THEME2_COLOR1),
+            corner_radius=3,
+            border_spacing=3,
+            border_color="gray50",
+            border_width=1,
+            text=text,
+            text_color=(self.BLACK, self.WHITE),
+            font=self.SOURCE_SANS_PRO_SMALL,
+            anchor=ctk.W
+        )
+        button.bind("<Enter>", command=self.hover_button, add="+")
+
+        return button
 
     def create_log_text_box(self):
         self.text_box = ctk.CTkTextbox(master=self.right_frame,
                                        fg_color=(self.WHITE,
                                                  self.THEME2_COLOR2),
                                        text_color=(self.BLACK, self.WHITE),
-                                       font=self.SOURCE_SANS_PRO_SMALL)
-        self.text_box.pack(side=ctk.TOP,
+                                       font=self.SOURCE_SANS_PRO_SMALL,
+                                       height=200,
+                                       corner_radius=3)
+        self.text_box.pack(side=ctk.BOTTOM,
                            fill=ctk.BOTH,
                            expand=False,
                            padx=(20, 10),

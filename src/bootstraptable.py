@@ -31,7 +31,7 @@ class Table(ctk.CTkFrame):
                  master,
                  data_frame: pd.DataFrame,
                  on_select_command=None,
-                 width=None,
+                 width=900,
                  header_height=30,
                  row_height=20,
                  fit_criterion=FitCriterion.DEFAULT,
@@ -215,6 +215,7 @@ class Table(ctk.CTkFrame):
     def add_row(self, new_row):
         self.data_frame.loc[len(self.data_frame)] = new_row
         self.draw_table()
+        self.on_resize(None)
 
     def switch_theme(self, new_theme):
         self.theme = new_theme
@@ -365,7 +366,8 @@ class Table(ctk.CTkFrame):
         self.draw_table()
 
     def compute_canvas_height(self):
-        return self.pagination_size * (self.row_height + self.row_separator_width)
+        return 200
+        # return self.pagination_size * (self.row_height + self.row_separator_width)
 
     def compute_column_widths(self):
         column_widths = []

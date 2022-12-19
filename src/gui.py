@@ -7,7 +7,7 @@ import pandas
 import customtkinter as ctk
 from bootstraptable import Table, FitCriterion
 from controller import Controller
-from math import ceil
+from math import ceil, floor
 from util import StdoutRedirector, DialogMode
 
 
@@ -21,16 +21,16 @@ class EntryWithLabel(ctk.CTkFrame):
                  label_text_color,
                  entry_color,
                  entry_default_text="",
-                 entry_width=200,
-                 label_width=10,
                  entry_border_width=1,
                  entry_font=("Source Sans Pro", 14),
                  entry_state=ctk.NORMAL,
                  label_font=("Source Sans Pro", 14),
                  label_side=ctk.TOP,
                  label_anchor=ctk.W,
+                 label_fill=ctk.X,
                  entry_side=ctk.TOP,
                  entry_anchor=ctk.W,
+                 entry_fill=ctk.X,
                  **kwargs):
         super(EntryWithLabel, self).__init__(master=master,
                                              fg_color=frame_color,
@@ -40,7 +40,6 @@ class EntryWithLabel(ctk.CTkFrame):
         self.entry_variable.set(entry_default_text)
         self.entry = ctk.CTkEntry(master=self,
                                   textvariable=self.entry_variable,
-                                  width=entry_width,
                                   border_width=entry_border_width,
                                   border_color="gray80",
                                   state=entry_state,
@@ -50,7 +49,6 @@ class EntryWithLabel(ctk.CTkFrame):
 
         self.label = ctk.CTkLabel(master=self,
                                   text=label_text,
-                                  width=label_width,
                                   anchor=ctk.W,
                                   text_color=label_text_color,
                                   fg_color=label_color,
@@ -58,13 +56,15 @@ class EntryWithLabel(ctk.CTkFrame):
 
         self.label_side = label_side
         self.label_anchor = label_anchor
+        self.label_fill = label_fill
         self.entry_side = entry_side
         self.entry_anchor = entry_anchor
+        self.entry_fill = entry_fill
 
     def pack(self, **kwargs):
         ctk.CTkFrame.pack(self, **kwargs)
-        self.label.pack(side=self.label_side, anchor=self.label_anchor)
-        self.entry.pack(side=self.entry_side, anchor=self.entry_anchor)
+        self.label.pack(side=self.label_side, anchor=self.label_anchor, fill=self.label_fill)
+        self.entry.pack(side=self.entry_side, anchor=self.entry_anchor, fill=self.entry_fill)
 
     def destroy(self):
         self.entry.destroy()
@@ -207,8 +207,6 @@ class GUI(object):
 
         def create_buttons(self):
             self.button_frame = ctk.CTkFrame(master=self.dialog,
-                                             width=100,
-                                             height=100,
                                              fg_color=self.frame_color_1)
             self.confirm_button = ctk.CTkButton(master=self.button_frame,
                                                 text="Conferma",
@@ -216,7 +214,6 @@ class GUI(object):
                                                 hover_color="#1265EA",
                                                 font=self.elements_font,
                                                 text_color="#FFFFFF",
-                                                width=80,
                                                 corner_radius=3,
                                                 command=self.save_patient)
 
@@ -226,7 +223,6 @@ class GUI(object):
                                                 hover_color="#1265EA",
                                                 font=self.elements_font,
                                                 text_color="#FFFFFF",
-                                                width=80,
                                                 corner_radius=3,
                                                 command=self.cancel)
 
@@ -298,8 +294,6 @@ class GUI(object):
 
         def create_registry_frame(self):
             self.registry_frame = ctk.CTkFrame(master=self.dialog,
-                                               width=100,
-                                               height=100,
                                                fg_color=self.frame_color_1,
                                                border_width=1,
                                                border_color="gray80")
@@ -307,8 +301,7 @@ class GUI(object):
             self.registry_label = ctk.CTkLabel(master=self.registry_frame,
                                                text="Informazioni paziente",
                                                font=self.section_font,
-                                               text_color=self.labels_text_color,
-                                               width=10)
+                                               text_color=self.labels_text_color)
             self.name_entry = self.create_registry_entry(label_text="Nome")
             self.surname_entry = self.create_registry_entry(label_text="Cognome")
             self.waiting_list_date_entry = self.create_registry_entry(label_text="Inserimento in lista d'attesa")
@@ -370,8 +363,7 @@ class GUI(object):
                                               fg_color=self.frame_color_2)
 
             self.summary_registry_frame = ctk.CTkFrame(master=self.summary_frame,
-                                                       fg_color=self.frame_color_2,
-                                                       width=300)
+                                                       fg_color=self.frame_color_2)
 
             self.summary_name_entry = self.create_summary_entry("Nome: ")
             self.summary_surname_entry = self.create_summary_entry("Cognome: ")
@@ -385,8 +377,7 @@ class GUI(object):
             self.summary_procedures_label = ctk.CTkLabel(master=self.summary_procedure_frame,
                                                          text="Procedure:",
                                                          font=self.parent_view.SOURCE_SANS_PRO_SMALL,
-                                                         text_color=self.labels_text_color,
-                                                         width=10)
+                                                         text_color=self.labels_text_color)
 
             self.summary_label = ctk.CTkLabel(master=self.summary_outer_frame,
                                               fg_color=self.frame_color_2,
@@ -406,7 +397,6 @@ class GUI(object):
                                   entry_color=self.frame_color_2,
                                   entry_border_width=0,
                                   entry_state=ctk.DISABLED,
-                                  entry_width=140,
                                   label_side=ctk.LEFT,
                                   label_anchor=ctk.W,
                                   entry_side=ctk.RIGHT,
@@ -447,8 +437,7 @@ class GUI(object):
             self.procedures_label = ctk.CTkLabel(master=self.procedures_frame,
                                                  text="Prestazioni",
                                                  font=self.section_font,
-                                                 text_color=self.labels_text_color,
-                                                 width=10)
+                                                 text_color=self.labels_text_color)
 
             self.procedures_label_searchbox = EntryWithLabel(master=self.procedures_frame,
                                                              label_text="Filtra per nome",
@@ -561,7 +550,6 @@ class GUI(object):
                                                          checkbox_height=15,
                                                          checkbox_width=15,
                                                          corner_radius=3,
-                                                         width=90,
                                                          command=lambda *_, procedure_code=procedure[0], procedure_variable=procedure_variable: self.update_summary_procedures(procedure_code, procedure_variable))
                     self.procedure_checkboxes.append(procedure_checkbox)
                     frame_checkboxes += 1
@@ -583,6 +571,16 @@ class GUI(object):
     def __init__(self, master):
         self.master = master
 
+        self.screen_width = master.winfo_width()
+        self.screen_height = master.winfo_height()
+
+        self.toolbar_width = floor(self.screen_width * 0.15)
+        self.summary_frame_width = floor(self.screen_width * 0.2)
+        self.notebook_width = floor(self.screen_width * 0.65)
+
+        self.notebook_height = floor(self.screen_height * 0.6)
+        self.textbox_height = floor(self.screen_height * 0.4)
+
         self.dialogs = []
         self.planning_number = 0
         self.tables = dict()
@@ -602,7 +600,8 @@ class GUI(object):
         self.toolbar_frame = ctk.CTkFrame(master=self.master,
                                           fg_color=(self.THEME1_COLOR2,
                                                     self.THEME2_COLOR2),
-                                          corner_radius=0)
+                                          corner_radius=0,
+                                          width=self.toolbar_width)
         self.toolbar_frame.pack(side=ctk.LEFT, fill=ctk.Y, expand=False)
 
         # log output and footer
@@ -622,14 +621,13 @@ class GUI(object):
     def create_summary_frame(self):
         self.summary_frame = ctk.CTkFrame(master=self.right_frame,
                                           fg_color=(self.THEME1_COLOR2, self.THEME2_COLOR2),
-                                          corner_radius=3)
+                                          corner_radius=3,
+                                          width=self.summary_frame_width)
         self.summary_frame.pack(side=ctk.RIGHT,
                                 fill=ctk.Y,
                                 expand=False,
                                 padx=(10, 20),
                                 pady=(20, 20))
-
-        right_x_pad = 150
 
         summary_label = ctk.CTkLabel(master=self.summary_frame,
                                      fg_color=(self.THEME1_COLOR2,
@@ -638,7 +636,7 @@ class GUI(object):
                                      font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
         summary_label.pack(side=ctk.TOP,
                            anchor=ctk.W,
-                           padx=(20, right_x_pad),
+                           padx=(20, 20),
                            pady=(20, 0))
 
         total_patients_label = ctk.CTkLabel(master=self.summary_frame,
@@ -648,7 +646,7 @@ class GUI(object):
                                             font=self.SOURCE_SANS_PRO_SMALL)
         total_patients_label.pack(side=ctk.TOP,
                                   anchor=ctk.W,
-                                  padx=(20, right_x_pad),
+                                  padx=(20, 20),
                                   pady=(0, 0))
 
         total_anesthesia_patients_label = ctk.CTkLabel(master=self.summary_frame,
@@ -658,7 +656,7 @@ class GUI(object):
                                                        font=self.SOURCE_SANS_PRO_SMALL)
         total_anesthesia_patients_label.pack(side=ctk.TOP,
                                              anchor=ctk.W,
-                                             padx=(20, right_x_pad),
+                                             padx=(20, 20),
                                              pady=(0, 0))
 
         total_infectious_patients_label = ctk.CTkLabel(master=self.summary_frame,
@@ -668,7 +666,7 @@ class GUI(object):
                                                        font=self.SOURCE_SANS_PRO_SMALL)
         total_infectious_patients_label.pack(side=ctk.TOP,
                                              anchor=ctk.W,
-                                             padx=(20, right_x_pad),
+                                             padx=(20, 20),
                                              pady=(0, 0))
 
         solver_label = ctk.CTkLabel(master=self.summary_frame,
@@ -678,7 +676,7 @@ class GUI(object):
                                     font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
         solver_label.pack(side=ctk.TOP,
                           anchor=ctk.W,
-                          padx=(20, right_x_pad),
+                          padx=(20, 20),
                           pady=(20, 0))
 
         gap_label = ctk.CTkLabel(master=self.summary_frame,
@@ -688,7 +686,7 @@ class GUI(object):
                                  font=self.SOURCE_SANS_PRO_SMALL)
         gap_label.pack(side=ctk.TOP,
                        anchor=ctk.W,
-                       padx=(20, right_x_pad),
+                       padx=(20, 20),
                        pady=(0, 0))
         time_limit_label = ctk.CTkLabel(master=self.summary_frame,
                                         fg_color=(self.THEME1_COLOR2,
@@ -697,7 +695,7 @@ class GUI(object):
                                         font=self.SOURCE_SANS_PRO_SMALL)
         time_limit_label.pack(side=ctk.TOP,
                               anchor=ctk.W,
-                              padx=(20, right_x_pad),
+                              padx=(20, 20),
                               pady=(0, 0))
 
     def create_toolbar(self):
@@ -869,10 +867,11 @@ class GUI(object):
                                                  self.THEME2_COLOR2),
                                        segmented_button_selected_color=self.CRAYON_BLUE,
                                        segmented_button_selected_hover_color=self.DARK_CRAYON_BLUE,
-                                       height=500,
-                                       corner_radius=3)
+                                       corner_radius=3,
+                                       width=self.notebook_width,
+                                       height=self.notebook_height)
         self.notebook.pack(side=ctk.TOP,
-                           expand=True,
+                           expand=False,
                            fill=ctk.BOTH,
                            padx=(20, 10),
                            pady=(0, 10))
@@ -891,9 +890,9 @@ class GUI(object):
             columns = self.PLANNING_HEADER
             data_frame = pandas.DataFrame(data=columns)
 
-        input_tab = self.notebook.add(tab_name)
+        tab = self.notebook.add(tab_name)
 
-        table_upper_button_frame = ctk.CTkFrame(master=input_tab, fg_color=(self.WHITE, self.THEME2_COLOR2))
+        table_upper_button_frame = ctk.CTkFrame(master=tab, fg_color=(self.WHITE, self.THEME2_COLOR2))
         table_upper_button_frame.pack(side=ctk.TOP, fill=ctk.X)
 
         close_tab_button = self.create_tabview_button(table_upper_button_frame,
@@ -904,14 +903,13 @@ class GUI(object):
                                                            )
         close_tab_button.pack(side=ctk.RIGHT, expand=False, padx=(2, 0), pady=(5, 5))
 
-        table = Table(master=input_tab,
+        table = Table(master=tab,
                       on_select_command=self.on_row_interaction,
                       data_frame=data_frame,
                       row_height=40,
                       header_height=40,
                       fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
                       row_separator_width=1,
-                      width=1200,
                       pagination_size=10,
                       theme=self.theme,
                       even_row_colors=("#ffffff", self.THEME2_COLOR2))
@@ -919,7 +917,7 @@ class GUI(object):
 
         self.tables[tab_name] = table
 
-        table_lower_button_frame = ctk.CTkFrame(master=input_tab, fg_color=(self.WHITE, self.THEME2_COLOR2))
+        table_lower_button_frame = ctk.CTkFrame(master=tab, fg_color=(self.WHITE, self.THEME2_COLOR2))
         table_lower_button_frame.pack(side=ctk.TOP, fill=ctk.X)
 
         add_patient_button = self.create_tabview_button(table_lower_button_frame,
@@ -984,8 +982,8 @@ class GUI(object):
                                                  self.THEME2_COLOR2),
                                        text_color=(self.BLACK, self.WHITE),
                                        font=self.SOURCE_SANS_PRO_SMALL,
-                                       height=200,
-                                       corner_radius=3)
+                                       corner_radius=3,
+                                       height=self.textbox_height)
         self.text_box.pack(side=ctk.BOTTOM,
                            fill=ctk.BOTH,
                            expand=False,
@@ -999,6 +997,8 @@ root = ctk.CTk()
 ctk.set_appearance_mode("light")
 root.title("Interventional Radiology Planner & Scheduler")
 root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(),
+              root.winfo_screenheight()))
+print((root.winfo_screenwidth(),
               root.winfo_screenheight()))
 root.state("zoomed")
 

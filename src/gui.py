@@ -912,7 +912,8 @@ class GUI(object):
                       row_separator_width=1,
                       pagination_size=10,
                       theme=self.theme,
-                      even_row_colors=("#ffffff", self.THEME2_COLOR2))
+                      even_row_colors=("#ffffff", self.THEME2_COLOR2),
+                      height=100)
         table.pack(side=ctk.TOP)
 
         self.tables[tab_name] = table

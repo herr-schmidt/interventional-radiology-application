@@ -31,7 +31,7 @@ class Table(ctk.CTkFrame):
                  master,
                  data_frame: pd.DataFrame,
                  on_select_command=None,
-                 width=900,
+                 width=1200,
                  header_height=30,
                  row_height=20,
                  fit_criterion=FitCriterion.DEFAULT,
@@ -51,7 +51,8 @@ class Table(ctk.CTkFrame):
                  header_text_colors=("#000000", "#FFFFFF"),
                  table_text_colors=("#000000", "#FFFFFF"),
                  page_number_label_text_colors=("#000000", "#FFFFFF"),
-                 theme="light"):
+                 theme="light",
+                 **kwargs):
         """Constructs a Table for displaying data.
 
         Args:
@@ -64,7 +65,7 @@ class Table(ctk.CTkFrame):
             row_separator_width (int, optional): Width of row separators. Defaults to 1.
             column_separator_width (int, optional): Width of column separators. Defaults to 1.
         """
-        super().__init__(master=master, width=width)
+        super().__init__(master=master, width=width, **kwargs)
 
         self.on_select_command = on_select_command
 
@@ -211,7 +212,6 @@ class Table(ctk.CTkFrame):
         self.data_frame.iloc[self.selected_row] = new_row
         self.draw_table()
 
-    # updates the selected row substituting new_row to it in the underlying pandas dataframe
     def add_row(self, new_row):
         self.data_frame.loc[len(self.data_frame)] = new_row
         self.draw_table()
@@ -366,8 +366,7 @@ class Table(ctk.CTkFrame):
         self.draw_table()
 
     def compute_canvas_height(self):
-        return 200
-        # return self.pagination_size * (self.row_height + self.row_separator_width)
+        return self.pagination_size * (self.row_height + self.row_separator_width)
 
     def compute_column_widths(self):
         column_widths = []
@@ -583,7 +582,7 @@ class Table(ctk.CTkFrame):
         previously_hovered_row = self.hover_row
 
         # to avoid last row hovering color when page is not full
-        if previously_hovered_row == self.data_frame.shape[0] - 1 and hover_row >= self.data_frame.shape[0]:
+        if previously_hovered_row == self.data_frame.shape[0] - 1 and hover_row >= self.data_frame.shape[0] and previously_hovered_row != self.selected_row:
             self.draw_row(previously_hovered_row,
                           background_type=Background.DEFAULT)
             self.hover_row = None

@@ -895,13 +895,35 @@ class GUI(object):
         table_upper_button_frame = ctk.CTkFrame(master=tab, fg_color=(self.WHITE, self.THEME2_COLOR2))
         table_upper_button_frame.pack(side=ctk.TOP, fill=ctk.X)
 
+        patients_list_label = ctk.CTkLabel(master=table_upper_button_frame,
+        text="Lista pazienti",
+        font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
+
+        patients_list_label.pack(side=ctk.LEFT, expand=False, padx=(2, 0), pady=(5, 5))
+
         close_tab_button = self.create_tabview_button(table_upper_button_frame,
-            "resources/delete.png",
+                                                            "resources/delete.png",
                                                            "resources/delete_w.png",
                                                            self.close_active_tab,
                                                            text="Chiudi scheda"
                                                            )
         close_tab_button.pack(side=ctk.RIGHT, expand=False, padx=(2, 0), pady=(5, 5))
+
+        switch_to_planning_button = self.create_tabview_button(table_upper_button_frame,
+ "resources/timetable.png",
+                                                           "resources/timetable_w.png",
+                                                           self.close_active_tab,
+                                                           text="Passa a pianificazione"
+                                                           )
+        switch_to_planning_button.pack(side=ctk.RIGHT, expand=False, padx=(2, 2), pady=(5, 5))
+
+        interactive_planning_button = self.create_tabview_button(table_upper_button_frame,
+ "resources/gantt.png",
+                                                           "resources/gantt_w.png",
+                                                           self.close_active_tab,
+                                                           text="Pianificazione interattiva"
+                                                           )
+        interactive_planning_button.pack(side=ctk.RIGHT, expand=False, padx=(2, 2), pady=(5, 5))
 
         table = Table(master=tab,
                       on_select_command=self.on_row_interaction,

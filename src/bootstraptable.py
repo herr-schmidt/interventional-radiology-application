@@ -129,20 +129,22 @@ class Table(ctk.CTkFrame):
 
         self.rows = data_frame.shape[0]
         self.columns = data_frame.shape[1]
-        self.pagination_size = pagination_size
-        self.current_page = 0
-        self.current_page_label_var = tk.IntVar()
-        self.current_page_label_var.initialize(1)
         self.header_height = header_height
         self.row_height = row_height
         self.fit_criterion = fit_criterion
-        self.default_column_width = 250
-        self.column_widths = self.compute_column_widths()
+        self.pagination_size = pagination_size
         self.footer_separator_width = footer_separator_width
         self.footer_height = footer_height
-
         self.row_separator_width = row_separator_width
         self.column_separator_width = column_separator_width
+
+        self.current_page = 0
+        self.current_page_label_var = tk.IntVar()
+        self.current_page_label_var.initialize(1)
+
+        self.default_column_width = 250
+        self.column_widths = self.compute_column_widths()
+
 
         self.table_canvas_width = sum(self.column_widths)
         self.table_canvas_height = self.compute_canvas_height()
@@ -196,6 +198,26 @@ class Table(ctk.CTkFrame):
         self.draw_header_text()
         self.draw_table()
         self.do_bindings()
+
+    # updates dataframe and redraws
+    def update_data_frame(self, data_frame):
+        self.data_frame = data_frame
+        self.rows = data_frame.shape[0]
+        self.columns = data_frame.shape[1]
+        self.column_widths = self.compute_column_widths()
+        self.table_canvas_width = sum(self.column_widths)
+
+        self.header_canvas.configure(width=self.table_canvas_width,
+                                       scrollregion=(0, 0, self.table_canvas_width, 0))
+
+        self.table_canvas.configure(width=self.table_canvas_width,
+                                      scrollregion=(0, 0, self.table_canvas_width, self.table_canvas_height))
+
+        self.footer.configure(width=self.table_canvas_width)
+
+        self.draw_header()
+        self.draw_header_text()
+        self.draw_table()
 
     def create_navigation_button(self, image, command):
         return ctk.CTkButton(master=self.footer,

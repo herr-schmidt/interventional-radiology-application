@@ -9,6 +9,7 @@ from bootstraptable import Table, FitCriterion
 from controller import Controller
 from math import ceil, floor
 from util import StdoutRedirector, DialogMode
+import pandas as pd
 
 
 class EntryWithLabel(ctk.CTkFrame):
@@ -582,12 +583,13 @@ class GUI(object):
         self.summary_frame_width = floor(self.screen_width * 0.2)
         self.notebook_width = floor(self.screen_width * 0.65)
 
-        self.notebook_height = floor(self.screen_height * 0.6)
+        self.notebook_height = floor(self.screen_height * 0.5)
         self.textbox_height = floor(self.screen_height * 0.4)
 
         self.dialogs = []
         self.planning_number = 0
         self.tables = dict()
+        self.tables_dataframes = dict()
         self.tables_edit_buttons = dict()
 
         self.controller: Controller = None
@@ -754,10 +756,14 @@ class GUI(object):
             ctk.set_appearance_mode("dark")
             for table in self.tables.values():
                 table.switch_theme("dark")
+            for table in self.planning_tables.values():
+                table.switch_theme("dark")
         else:
             self.theme = "light"
             ctk.set_appearance_mode("light")
             for table in self.tables.values():
+                table.switch_theme("light")
+            for table in self.planning_tables.values():
                 table.switch_theme("light")
 
     def launch_solver(self):
@@ -836,6 +842,39 @@ class GUI(object):
     def close_active_tab(self):
         active_tab = self.notebook.get()
         self.notebook.delete(active_tab)
+
+    def switch_view(self, button, label):
+        selected_tab = self.notebook.get()
+        table = self.tables[selected_tab]
+        new_data_frame = None
+
+        if label.cget("text") == "Lista pazienti":
+            icon = ctk.CTkImage(Image.open("resources\patients_list.png"),
+                                Image.open("resources\patients_list_w.png"))
+            button.configure(text="Passa a lista pazienti", image=icon)
+            label.configure(text="Pianificazione")
+
+            data_dict = {"Colonna 1": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+            "Colonna 2": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+            "Colonna 3": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+            "Colonna 4": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+            "Colonna 5": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+            "Colonna 6": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+            "Colonna 7": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"], }
+
+            new_data_frame = pd.DataFrame(data=data_dict)
+
+        elif label.cget("text") == "Pianificazione":
+            icon = ctk.CTkImage(Image.open("resources\\timetable.png"),
+                                Image.open("resources\\timetable_w.png"))
+            button.configure(text="Passa a pianificazione", image=icon)
+            label.configure(text="Lista pazienti")
+            new_data_frame = self.tables_dataframes[selected_tab][0]
+
+        table.update_data_frame(new_data_frame)
+
+    def show_interactive_planning(self):
+        pass
 
     def solve(self):
         pass
@@ -923,21 +962,22 @@ class GUI(object):
                               padx=(2, 0),
                               pady=(5, 5))
 
-        switch_to_planning_button = self.create_tabview_button(table_upper_button_frame,
-                                                               "resources/timetable.png",
-                                                               "resources/timetable_w.png",
-                                                               self.close_active_tab,
-                                                               text="Passa a pianificazione"
-                                                               )
-        switch_to_planning_button.pack(side=ctk.RIGHT,
-                                       expand=False,
-                                       padx=(2, 2),
-                                       pady=(5, 5))
+        switch_view_button = self.create_tabview_button(table_upper_button_frame,
+                                                 "resources/timetable.png",
+                                                 "resources/timetable_w.png",
+                                                 #self.switch_view,
+                                                 text="Passa a pianificazione"
+                                                 )
+        switch_view_button.configure(command=lambda button=switch_view_button, label=patients_list_label: self.switch_view(button, label))
+        switch_view_button.pack(side=ctk.RIGHT,
+                         expand=False,
+                         padx=(2, 2),
+                         pady=(5, 5))
 
         interactive_planning_button = self.create_tabview_button(table_upper_button_frame,
                                                                  "resources/gantt.png",
                                                                  "resources/gantt_w.png",
-                                                                 self.close_active_tab,
+                                                                 self.show_interactive_planning,
                                                                  text="Pianificazione interattiva"
                                                                  )
         interactive_planning_button.pack(side=ctk.RIGHT,
@@ -959,6 +999,7 @@ class GUI(object):
         table.pack(side=ctk.TOP)
 
         self.tables[tab_name] = table
+        self.tables_dataframes[tab_name] = (data_frame, None)
 
         table_lower_button_frame = ctk.CTkFrame(master=tab,
                                                 fg_color=(self.WHITE, self.THEME2_COLOR2))

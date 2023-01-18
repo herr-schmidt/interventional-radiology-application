@@ -213,8 +213,6 @@ class Table(ctk.CTkFrame):
         self.table_canvas.configure(width=self.table_canvas_width,
                                       scrollregion=(0, 0, self.table_canvas_width, self.table_canvas_height))
 
-        self.footer.configure(width=self.table_canvas_width)
-
         self.draw_header()
         self.draw_header_text()
         self.draw_table()

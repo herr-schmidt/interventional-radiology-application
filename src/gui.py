@@ -1,6 +1,5 @@
 import sys
 import re
-import tkinter as ctk
 from PIL import Image
 from tkinter import filedialog
 import pandas
@@ -10,6 +9,7 @@ from controller import Controller
 from math import ceil, floor
 from util import StdoutRedirector, DialogMode
 import pandas as pd
+from embedded_browser import MainBrowserFrame, cef
 
 
 class EntryWithLabel(ctk.CTkFrame):
@@ -583,7 +583,7 @@ class GUI(object):
         self.summary_frame_width = floor(self.screen_width * 0.2)
         self.notebook_width = floor(self.screen_width * 0.65)
 
-        self.notebook_height = floor(self.screen_height * 0.5)
+        self.notebook_height = floor(self.screen_height * 0.8)
         self.textbox_height = floor(self.screen_height * 0.4)
 
         self.dialogs = []
@@ -620,7 +620,7 @@ class GUI(object):
         self.create_toolbar()
         self.create_summary_frame()
         self.create_notebook()
-        self.create_log_text_box()
+        # self.create_log_text_box()
 
         print(self.WELCOME_MESSAGE)
 
@@ -718,6 +718,12 @@ class GUI(object):
                                                               text="Importa da file Excel",
                                                               )
 
+        self.solver_config_button = self.create_toolbar_button("resources/solver_config.png",
+                                                     "resources/solver_config_w.png",
+                                                     self.config_solver,
+                                                     text="Impostazioni solver"
+                                                     )
+
         self.run_button = self.create_toolbar_button("resources/run.png",
                                                      "resources/run_w.png",
                                                      self.launch_solver,
@@ -736,6 +742,10 @@ class GUI(object):
         self.import_excel_button.pack(side=ctk.TOP,
                                       expand=False,
                                       fill=ctk.X)
+        self.solver_config_button.pack(side=ctk.TOP,
+                             expand=False,
+                             fill=ctk.X,
+                             pady=(50, 0))
         self.run_button.pack(side=ctk.TOP,
                              expand=False,
                              fill=ctk.X)
@@ -765,6 +775,9 @@ class GUI(object):
                 table.switch_theme("light")
             for table in self.planning_tables.values():
                 table.switch_theme("light")
+
+    def config_solver(self):
+        pass
 
     def launch_solver(self):
         pass
@@ -874,7 +887,8 @@ class GUI(object):
         table.update_data_frame(new_data_frame)
 
     def show_interactive_planning(self):
-        pass
+        gantt_toplevel = ctk.CTkToplevel()
+        main_browser_frame = MainBrowserFrame(gantt_toplevel)
 
     def solve(self):
         pass
@@ -920,7 +934,7 @@ class GUI(object):
                            expand=False,
                            fill=ctk.BOTH,
                            padx=(20, 10),
-                           pady=(0, 10))
+                           pady=(0, 20))
 
     def on_row_interaction(self, event):
         active_table_index = self.notebook.get()
@@ -942,15 +956,6 @@ class GUI(object):
                                                 fg_color=(self.WHITE, self.THEME2_COLOR2))
         table_upper_button_frame.pack(side=ctk.TOP, fill=ctk.X)
 
-        patients_list_label = ctk.CTkLabel(master=table_upper_button_frame,
-                                           text="Lista pazienti",
-                                           font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
-
-        patients_list_label.pack(side=ctk.LEFT,
-                                 expand=False,
-                                 padx=(2, 0),
-                                 pady=(5, 5))
-
         close_tab_button = self.create_tabview_button(table_upper_button_frame,
                                                       "resources/delete.png",
                                                       "resources/delete_w.png",
@@ -959,47 +964,17 @@ class GUI(object):
                                                       )
         close_tab_button.pack(side=ctk.RIGHT,
                               expand=False,
-                              padx=(2, 0),
-                              pady=(5, 5))
+                              padx=(2, 0))
 
-        switch_view_button = self.create_tabview_button(table_upper_button_frame,
-                                                 "resources/timetable.png",
-                                                 "resources/timetable_w.png",
-                                                 #self.switch_view,
-                                                 text="Passa a pianificazione"
-                                                 )
-        switch_view_button.configure(command=lambda button=switch_view_button, label=patients_list_label: self.switch_view(button, label))
-        switch_view_button.pack(side=ctk.RIGHT,
-                         expand=False,
-                         padx=(2, 2),
-                         pady=(5, 5))
-
-        interactive_planning_button = self.create_tabview_button(table_upper_button_frame,
-                                                                 "resources/gantt.png",
-                                                                 "resources/gantt_w.png",
-                                                                 self.show_interactive_planning,
-                                                                 text="Pianificazione interattiva"
-                                                                 )
-        interactive_planning_button.pack(side=ctk.RIGHT,
-                                         expand=False,
-                                         padx=(2, 2),
-                                         pady=(5, 5))
-
-        table = Table(master=tab,
-                      on_select_command=self.on_row_interaction,
-                      data_frame=data_frame,
-                      row_height=40,
-                      header_height=40,
-                      fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
-                      row_separator_width=1,
-                      pagination_size=10,
-                      theme=self.theme,
-                      even_row_colors=("#ffffff", self.THEME2_COLOR2),
-                      height=100)
-        table.pack(side=ctk.TOP)
-
-        self.tables[tab_name] = table
-        self.tables_dataframes[tab_name] = (data_frame, None)
+        export_excel_button = self.create_tabview_button(table_upper_button_frame,
+                                                         "resources/export.png",
+                                                         "resources/export_w.png",
+                                                         command=self.export_callback,
+                                                         text="Esporta in file Excel"
+                                                         )
+        export_excel_button.pack(side=ctk.RIGHT,
+                                expand=False,
+                                padx=(2, 0))
 
         table_lower_button_frame = ctk.CTkFrame(master=tab,
                                                 fg_color=(self.WHITE, self.THEME2_COLOR2))
@@ -1019,25 +994,67 @@ class GUI(object):
                                                          text="Modifica paziente",
                                                          state=ctk.DISABLED
                                                          )
-        export_excel_button = self.create_tabview_button(table_lower_button_frame,
-                                                         "resources/export.png",
-                                                         "resources/export_w.png",
-                                                         command=self.export_callback,
-                                                         text="Esporta in file Excel"
-                                                         )
 
-        add_patient_button.pack(side=ctk.LEFT,
+        switch_view_button = self.create_tabview_button(table_lower_button_frame,
+                                                 "resources/timetable.png",
+                                                 "resources/timetable_w.png",
+                                                 #self.switch_view,
+                                                 text="Passa a pianificazione"
+                                                 )
+
+        interactive_planning_button = self.create_tabview_button(table_lower_button_frame,
+                                                                 "resources/gantt.png",
+                                                                 "resources/gantt_w.png",
+                                                                 self.show_interactive_planning,
+                                                                 text="Pianificazione interattiva"
+                                                                 )
+
+
+
+
+        patients_list_label = ctk.CTkLabel(master=table_lower_button_frame,
+                                           text="Lista pazienti",
+                                           font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
+
+        patients_list_label.pack(side=ctk.LEFT,
+                                 expand=False,
+                                 padx=(2, 0))
+
+        switch_view_button.configure(command=lambda button=switch_view_button, label=patients_list_label: self.switch_view(button, label))
+
+        add_patient_button.pack(side=ctk.RIGHT,
                                 expand=False,
-                                padx=(0, 2),
-                                pady=(5, 0))
-        edit_patient_button.pack(side=ctk.LEFT,
+                                padx=(2, 0),
+                                pady=(2, 2))
+        edit_patient_button.pack(side=ctk.RIGHT,
                                 expand=False,
-                                padx=(0, 0),
-                                pady=(5, 0))
-        export_excel_button.pack(side=ctk.RIGHT,
-                                expand=False,
-                                padx=(0, 0),
-                                pady=(5, 0))
+                                padx=(2, 0),
+                                pady=(2, 2))
+        interactive_planning_button.pack(side=ctk.RIGHT,
+                                         expand=False,
+                                         padx=(2, 0),
+                                pady=(2, 2))
+        switch_view_button.pack(side=ctk.RIGHT,
+                         expand=False,
+                         padx=(2, 0),
+                                pady=(2, 2))
+
+
+        table = Table(master=tab,
+                      on_select_command=self.on_row_interaction,
+                      data_frame=data_frame,
+                      row_height=40,
+                      header_height=40,
+                      fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
+                      row_separator_width=1,
+                      pagination_size=20,
+                      theme=self.theme,
+                      even_row_colors=("#ffffff", self.THEME2_COLOR2),
+                      height=100)
+        table.pack(side=ctk.TOP)
+
+        self.tables[tab_name] = table
+        self.tables_dataframes[tab_name] = (data_frame, None)
 
         self.tables_edit_buttons[tab_name] = edit_patient_button
 
@@ -1065,7 +1082,8 @@ class GUI(object):
                                text=text,
                                text_color=(self.BLACK, self.WHITE),
                                font=self.SOURCE_SANS_PRO_SMALL,
-                               anchor=ctk.W
+                               anchor=ctk.W,
+                               width=170
                                )
         button.bind("<Enter>", command=self.hover_button, add="+")
 
@@ -1101,4 +1119,6 @@ gui = GUI(root)
 controller = Controller(model=None, view=gui)
 gui.bind_controller(controller=controller)
 
+cef.Initialize(settings={}, switches={'disable-gpu': ""}) # disable gpu in order to avoid the pesky scaling issue
 root.mainloop()
+cef.Shutdown()

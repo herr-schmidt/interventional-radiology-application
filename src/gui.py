@@ -686,6 +686,53 @@ class GUI(object):
                                            anchor=ctk.W,
                                            padx=(20, 20),
                                            pady=(0, 0))
+        
+        self.robustness_summary_label.pack(side=ctk.TOP,
+                                           anchor=ctk.W,
+                                           padx=(20, 20),
+                                           pady=(0, 0))
+        
+        self.solution_summary_label.pack(side=ctk.TOP,
+                                       anchor=ctk.W,
+                                       padx=(20, 20),
+                                       pady=(20, 0))
+        
+        self.selected_patients_label.pack(side=ctk.TOP,
+                                          anchor=ctk.W,
+                                          padx=(20, 20),
+                                          pady=(0, 0))
+        
+        self.anesthesia_selected_patients_label.pack(side=ctk.TOP,
+                                                     anchor=ctk.W,
+                                                     padx=(20, 20),
+                                                     pady=(0, 0))
+        
+        self.infectious_selected_patients_label.pack(side=ctk.TOP,
+                                                     anchor=ctk.W,
+                                                     padx=(20, 20),
+                                                     pady=(0, 0))
+
+        self.delayed_selected_patients_label.pack(side=ctk.TOP,
+                                                  anchor=ctk.W,
+                                                  padx=(20, 20),
+                                                  pady=(0, 0))
+
+        self.average_OR1_utilization_label.pack(side=ctk.TOP,
+                                                anchor=ctk.W,
+                                                padx=(20, 20),
+                                                pady=(0, 0))
+        self.average_OR2_utilization_label.pack(side=ctk.TOP,
+                                                anchor=ctk.W,
+                                                padx=(20, 20),
+                                                pady=(0, 0))
+        self.average_OR3_utilization_label.pack(side=ctk.TOP,
+                                                anchor=ctk.W,
+                                                padx=(20, 20),
+                                                pady=(0, 0))
+        self.average_OR4_utilization_label.pack(side=ctk.TOP,
+                                                anchor=ctk.W,
+                                                padx=(20, 20),
+                                                pady=(0, 0))
 
     def create_summary_frame(self):
         self.summary_frame = ctk.CTkFrame(master=self.right_frame,
@@ -702,7 +749,7 @@ class GUI(object):
 
         self.total_patients_summary_entry = self.create_summary_entry(label_text="Pazienti totali: ")
         self.total_anesthesia_patients_summary_entry = self.create_summary_entry(label_text="Pazienti con anestesia: ")
-        self.total_infectious_patients_summary_entry = self.create_summary_entry(label_text="Pazienti con infezioni in atto: ")
+        self.total_infectious_patients_summary_entry = self.create_summary_entry(label_text="Pazienti con infezioni: ")
 
         self.solver_summary_label = ctk.CTkLabel(master=self.summary_frame,
                                                  fg_color=(self.THEME1_COLOR2,
@@ -710,8 +757,24 @@ class GUI(object):
                                                  text="Riepilogo impostazioni solver",
                                                  font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
 
-        self.gap_summary_label = self.create_summary_entry(label_text="Gap (%): ")
+        self.gap_summary_label = self.create_summary_entry(label_text="Gap relativo tollerato (%): ")
         self.time_limit_summary_label = self.create_summary_entry(label_text="Timeout (s): ")
+        self.robustness_summary_label = self.create_summary_entry(label_text="Parametro di robustezza: ")
+
+        self.solution_summary_label = ctk.CTkLabel(master=self.summary_frame,
+                                                 fg_color=(self.THEME1_COLOR2,
+                                                           self.THEME2_COLOR2),
+                                                 text="Riepilogo soluzione",
+                                                 font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
+        
+        self.selected_patients_label = self.create_summary_entry(label_text="Pazienti selezionati: ")
+        self.anesthesia_selected_patients_label = self.create_summary_entry(label_text="Pazienti con anestesia selezionati: ")
+        self.infectious_selected_patients_label = self.create_summary_entry(label_text="Pazienti con infezioni selezionati: ")
+        self.delayed_selected_patients_label = self.create_summary_entry(label_text="Pazienti stimati in ritardo: ")
+        self.average_OR1_utilization_label = self.create_summary_entry(label_text="Utilizzazione media Sala 1: ")
+        self.average_OR2_utilization_label = self.create_summary_entry(label_text="Utilizzazione media Sala 2: ")
+        self.average_OR3_utilization_label = self.create_summary_entry(label_text="Utilizzazione media Sala 3: ")
+        self.average_OR4_utilization_label = self.create_summary_entry(label_text="Utilizzazione media Sala 4: ")
 
         self.pack_summary_frame()
 
@@ -936,7 +999,8 @@ class GUI(object):
                                        segmented_button_selected_hover_color=self.DARK_CRAYON_BLUE,
                                        corner_radius=3,
                                        width=self.notebook_width,
-                                       height=self.notebook_height)
+                                       height=self.notebook_height,
+                                       command=self.update_patients_summary)
         self.notebook.pack(side=ctk.TOP,
                            expand=False,
                            fill=ctk.BOTH,
@@ -1031,6 +1095,9 @@ class GUI(object):
 
         self.tables_edit_buttons[tab_name] = edit_patient_button
 
+        self.notebook.set(tab_name)
+        self.update_patients_summary()
+
         # pack everything
         table_upper_button_frame.pack(side=ctk.TOP, fill=ctk.X)
         close_tab_button.pack(side=ctk.RIGHT,
@@ -1060,6 +1127,18 @@ class GUI(object):
                                 padx=(2, 0),
                                 pady=(2, 2))
         table.pack(side=ctk.TOP)
+
+    def update_patients_summary(self):
+        current_tab_name = self.notebook.get()
+        current_data_frame = self.tables_dataframes[current_tab_name][0]
+
+        total_patients = len(current_data_frame)
+        anesthesia_patients = current_data_frame.query("Anestesia == True").shape[0]
+        infectious_patients = current_data_frame.query("Infezioni == True").shape[0]
+
+        self.total_patients_summary_entry.entry_variable.set(str(total_patients))
+        self.total_anesthesia_patients_summary_entry.entry_variable.set(str(anesthesia_patients))
+        self.total_infectious_patients_summary_entry.entry_variable.set(str(infectious_patients))
 
     def create_tabview_button(self,
                               table_button_frame,

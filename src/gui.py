@@ -310,7 +310,6 @@ class GUI(object):
             self.name_entry = self.create_registry_entry(label_text="Nome")
             self.surname_entry = self.create_registry_entry(label_text="Cognome")
             self.waiting_list_date_entry = self.create_registry_entry(label_text="Inserimento in lista d'attesa")
-
             self.anesthesia_checkbox = self.create_registry_checkbox(label_text="Anestesia")
             self.infections_checkbox = self.create_registry_checkbox(label_text="Infezioni in atto")
 
@@ -620,9 +619,73 @@ class GUI(object):
         self.create_toolbar()
         self.create_summary_frame()
         self.create_notebook()
+
         # self.create_log_text_box()
 
         print(self.WELCOME_MESSAGE)
+
+    def create_summary_entry(self, label_text, entry_text=""):
+        return EntryWithLabel(master=self.summary_frame,
+                              label_text=label_text,
+                              entry_default_text=entry_text,
+                              label_font=self.SOURCE_SANS_PRO_SMALL,
+                              entry_font=self.SOURCE_SANS_PRO_SMALL,
+                              frame_color=(self.WHITE,
+                                           self.THEME2_COLOR2),
+                              label_color=(self.WHITE,
+                                           self.THEME2_COLOR2),
+                              label_text_color=(self.BLACK,
+                                                self.WHITE),
+                              entry_color=(self.WHITE,
+                                           self.THEME2_COLOR2),
+                              entry_border_width=0,
+                              entry_state=ctk.DISABLED,
+                              label_side=ctk.LEFT,
+                              label_anchor=ctk.W,
+                              entry_side=ctk.RIGHT,
+                              entry_anchor=ctk.E)
+
+    def pack_summary_frame(self):
+        self.summary_frame.pack(side=ctk.RIGHT,
+                                fill=ctk.Y,
+                                expand=False,
+                                padx=(10, 20),
+                                pady=(20, 20))
+
+        self.summary_label.pack(side=ctk.TOP,
+                                anchor=ctk.W,
+                                padx=(20, 20),
+                                pady=(20, 0))
+
+        self.total_patients_summary_entry.pack(side=ctk.TOP,
+                                               anchor=ctk.W,
+                                               padx=(20, 20),
+                                               pady=(0, 0))
+
+        self.total_anesthesia_patients_summary_entry.pack(side=ctk.TOP,
+                                                          anchor=ctk.W,
+                                                          padx=(20, 20),
+                                                          pady=(0, 0))
+
+        self.total_infectious_patients_summary_entry.pack(side=ctk.TOP,
+                                                          anchor=ctk.W,
+                                                          padx=(20, 20),
+                                                          pady=(0, 0))
+
+        self.solver_summary_label.pack(side=ctk.TOP,
+                                       anchor=ctk.W,
+                                       padx=(20, 20),
+                                       pady=(20, 0))
+
+        self.gap_summary_label.pack(side=ctk.TOP,
+                                    anchor=ctk.W,
+                                    padx=(20, 20),
+                                    pady=(0, 0))
+
+        self.time_limit_summary_label.pack(side=ctk.TOP,
+                                           anchor=ctk.W,
+                                           padx=(20, 20),
+                                           pady=(0, 0))
 
     def create_summary_frame(self):
         self.summary_frame = ctk.CTkFrame(master=self.right_frame,
@@ -630,80 +693,27 @@ class GUI(object):
                                                     self.THEME2_COLOR2),
                                           corner_radius=3,
                                           width=self.summary_frame_width)
-        self.summary_frame.pack(side=ctk.RIGHT,
-                                fill=ctk.Y,
-                                expand=False,
-                                padx=(10, 20),
-                                pady=(20, 20))
 
-        summary_label = ctk.CTkLabel(master=self.summary_frame,
-                                     fg_color=(self.THEME1_COLOR2,
-                                               self.THEME2_COLOR2),
-                                     text="Riepilogo pazienti",
-                                     font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
-        summary_label.pack(side=ctk.TOP,
-                           anchor=ctk.W,
-                           padx=(20, 20),
-                           pady=(20, 0))
+        self.summary_label = ctk.CTkLabel(master=self.summary_frame,
+                                          fg_color=(self.THEME1_COLOR2,
+                                                    self.THEME2_COLOR2),
+                                          text="Riepilogo pazienti",
+                                          font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
 
-        total_patients_label = ctk.CTkLabel(master=self.summary_frame,
-                                            fg_color=(self.THEME1_COLOR2,
-                                                      self.THEME2_COLOR2),
-                                            text="Pazienti totali: ",
-                                            font=self.SOURCE_SANS_PRO_SMALL)
-        total_patients_label.pack(side=ctk.TOP,
-                                  anchor=ctk.W,
-                                  padx=(20, 20),
-                                  pady=(0, 0))
+        self.total_patients_summary_entry = self.create_summary_entry(label_text="Pazienti totali: ")
+        self.total_anesthesia_patients_summary_entry = self.create_summary_entry(label_text="Pazienti con anestesia: ")
+        self.total_infectious_patients_summary_entry = self.create_summary_entry(label_text="Pazienti con infezioni in atto: ")
 
-        total_anesthesia_patients_label = ctk.CTkLabel(master=self.summary_frame,
-                                                       fg_color=(self.THEME1_COLOR2,
-                                                                 self.THEME2_COLOR2),
-                                                       text="Pazienti con anestesia: ",
-                                                       font=self.SOURCE_SANS_PRO_SMALL)
-        total_anesthesia_patients_label.pack(side=ctk.TOP,
-                                             anchor=ctk.W,
-                                             padx=(20, 20),
-                                             pady=(0, 0))
+        self.solver_summary_label = ctk.CTkLabel(master=self.summary_frame,
+                                                 fg_color=(self.THEME1_COLOR2,
+                                                           self.THEME2_COLOR2),
+                                                 text="Riepilogo impostazioni solver",
+                                                 font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
 
-        total_infectious_patients_label = ctk.CTkLabel(master=self.summary_frame,
-                                                       fg_color=(self.THEME1_COLOR2,
-                                                                 self.THEME2_COLOR2),
-                                                       text="Pazienti con infezioni in atto: ",
-                                                       font=self.SOURCE_SANS_PRO_SMALL)
-        total_infectious_patients_label.pack(side=ctk.TOP,
-                                             anchor=ctk.W,
-                                             padx=(20, 20),
-                                             pady=(0, 0))
+        self.gap_summary_label = self.create_summary_entry(label_text="Gap (%): ")
+        self.time_limit_summary_label = self.create_summary_entry(label_text="Timeout (s): ")
 
-        solver_label = ctk.CTkLabel(master=self.summary_frame,
-                                    fg_color=(self.THEME1_COLOR2,
-                                              self.THEME2_COLOR2),
-                                    text="Riepilogo impostazioni solver",
-                                    font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
-        solver_label.pack(side=ctk.TOP,
-                          anchor=ctk.W,
-                          padx=(20, 20),
-                          pady=(20, 0))
-
-        gap_label = ctk.CTkLabel(master=self.summary_frame,
-                                 fg_color=(self.THEME1_COLOR2,
-                                           self.THEME2_COLOR2),
-                                 text="Gap (%): ",
-                                 font=self.SOURCE_SANS_PRO_SMALL)
-        gap_label.pack(side=ctk.TOP,
-                       anchor=ctk.W,
-                       padx=(20, 20),
-                       pady=(0, 0))
-        time_limit_label = ctk.CTkLabel(master=self.summary_frame,
-                                        fg_color=(self.THEME1_COLOR2,
-                                                  self.THEME2_COLOR2),
-                                        text="Timeout (s): ",
-                                        font=self.SOURCE_SANS_PRO_SMALL)
-        time_limit_label.pack(side=ctk.TOP,
-                              anchor=ctk.W,
-                              padx=(20, 20),
-                              pady=(0, 0))
+        self.pack_summary_frame()
 
     def create_toolbar(self):
 
@@ -717,19 +727,16 @@ class GUI(object):
                                                               self.import_callback,
                                                               text="Importa da file Excel",
                                                               )
-
         self.solver_config_button = self.create_toolbar_button("resources/solver_config.png",
-                                                     "resources/solver_config_w.png",
-                                                     self.config_solver,
-                                                     text="Impostazioni solver"
-                                                     )
-
+                                                               "resources/solver_config_w.png",
+                                                               self.config_solver,
+                                                               text="Impostazioni solver"
+                                                               )
         self.run_button = self.create_toolbar_button("resources/run.png",
                                                      "resources/run_w.png",
                                                      self.launch_solver,
                                                      text="Calcola pianificazione"
                                                      )
-
         self.stop_button = self.create_toolbar_button("resources/stop.png",
                                                       "resources/stop_w.png",
                                                       self.stop_solver,
@@ -743,9 +750,9 @@ class GUI(object):
                                       expand=False,
                                       fill=ctk.X)
         self.solver_config_button.pack(side=ctk.TOP,
-                             expand=False,
-                             fill=ctk.X,
-                             pady=(50, 0))
+                                       expand=False,
+                                       fill=ctk.X,
+                                       pady=(50, 0))
         self.run_button.pack(side=ctk.TOP,
                              expand=False,
                              fill=ctk.X)
@@ -868,12 +875,12 @@ class GUI(object):
             label.configure(text="Pianificazione")
 
             data_dict = {"Colonna 1": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-            "Colonna 2": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-            "Colonna 3": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-            "Colonna 4": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-            "Colonna 5": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-            "Colonna 6": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-            "Colonna 7": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"], }
+                         "Colonna 2": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+                         "Colonna 3": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+                         "Colonna 4": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+                         "Colonna 5": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+                         "Colonna 6": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+                         "Colonna 7": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"], }
 
             new_data_frame = pd.DataFrame(data=data_dict)
 
@@ -951,10 +958,8 @@ class GUI(object):
             data_frame = pandas.DataFrame(data=columns)
 
         tab = self.notebook.add(tab_name)
-
         table_upper_button_frame = ctk.CTkFrame(master=tab,
                                                 fg_color=(self.WHITE, self.THEME2_COLOR2))
-        table_upper_button_frame.pack(side=ctk.TOP, fill=ctk.X)
 
         close_tab_button = self.create_tabview_button(table_upper_button_frame,
                                                       "resources/delete.png",
@@ -962,9 +967,6 @@ class GUI(object):
                                                       self.close_active_tab,
                                                       text="Chiudi scheda"
                                                       )
-        close_tab_button.pack(side=ctk.RIGHT,
-                              expand=False,
-                              padx=(2, 0))
 
         export_excel_button = self.create_tabview_button(table_upper_button_frame,
                                                          "resources/export.png",
@@ -972,13 +974,9 @@ class GUI(object):
                                                          command=self.export_callback,
                                                          text="Esporta in file Excel"
                                                          )
-        export_excel_button.pack(side=ctk.RIGHT,
-                                expand=False,
-                                padx=(2, 0))
 
         table_lower_button_frame = ctk.CTkFrame(master=tab,
                                                 fg_color=(self.WHITE, self.THEME2_COLOR2))
-        table_lower_button_frame.pack(side=ctk.TOP, fill=ctk.X)
 
         add_patient_button = self.create_tabview_button(table_lower_button_frame,
                                                         "resources/add-patient.png",
@@ -996,11 +994,11 @@ class GUI(object):
                                                          )
 
         switch_view_button = self.create_tabview_button(table_lower_button_frame,
-                                                 "resources/timetable.png",
-                                                 "resources/timetable_w.png",
-                                                 #self.switch_view,
-                                                 text="Passa a pianificazione"
-                                                 )
+                                                        "resources/timetable.png",
+                                                        "resources/timetable_w.png",
+                                                        # self.switch_view,
+                                                        text="Passa a pianificazione"
+                                                        )
 
         interactive_planning_button = self.create_tabview_button(table_lower_button_frame,
                                                                  "resources/gantt.png",
@@ -1009,36 +1007,12 @@ class GUI(object):
                                                                  text="Pianificazione interattiva"
                                                                  )
 
-
-
-
         patients_list_label = ctk.CTkLabel(master=table_lower_button_frame,
                                            text="Lista pazienti",
                                            font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
 
-        patients_list_label.pack(side=ctk.LEFT,
-                                 expand=False,
-                                 padx=(2, 0))
-
-        switch_view_button.configure(command=lambda button=switch_view_button, label=patients_list_label: self.switch_view(button, label))
-
-        add_patient_button.pack(side=ctk.RIGHT,
-                                expand=False,
-                                padx=(2, 0),
-                                pady=(2, 2))
-        edit_patient_button.pack(side=ctk.RIGHT,
-                                expand=False,
-                                padx=(2, 0),
-                                pady=(2, 2))
-        interactive_planning_button.pack(side=ctk.RIGHT,
-                                         expand=False,
-                                         padx=(2, 0),
-                                pady=(2, 2))
-        switch_view_button.pack(side=ctk.RIGHT,
-                         expand=False,
-                         padx=(2, 0),
-                                pady=(2, 2))
-
+        switch_view_button.configure(command=lambda button=switch_view_button,
+                                     label=patients_list_label: self.switch_view(button, label))
 
         table = Table(master=tab,
                       on_select_command=self.on_row_interaction,
@@ -1051,12 +1025,41 @@ class GUI(object):
                       theme=self.theme,
                       even_row_colors=("#ffffff", self.THEME2_COLOR2),
                       height=100)
-        table.pack(side=ctk.TOP)
 
         self.tables[tab_name] = table
         self.tables_dataframes[tab_name] = (data_frame, None)
 
         self.tables_edit_buttons[tab_name] = edit_patient_button
+
+        # pack everything
+        table_upper_button_frame.pack(side=ctk.TOP, fill=ctk.X)
+        close_tab_button.pack(side=ctk.RIGHT,
+                              expand=False,
+                              padx=(2, 0))
+        export_excel_button.pack(side=ctk.RIGHT,
+                                 expand=False,
+                                 padx=(2, 0))
+        table_lower_button_frame.pack(side=ctk.TOP, fill=ctk.X)
+        patients_list_label.pack(side=ctk.LEFT,
+                                 expand=False,
+                                 padx=(2, 0))
+        add_patient_button.pack(side=ctk.RIGHT,
+                                expand=False,
+                                padx=(2, 0),
+                                pady=(2, 2))
+        edit_patient_button.pack(side=ctk.RIGHT,
+                                 expand=False,
+                                 padx=(2, 0),
+                                 pady=(2, 2))
+        interactive_planning_button.pack(side=ctk.RIGHT,
+                                         expand=False,
+                                         padx=(2, 0),
+                                         pady=(2, 2))
+        switch_view_button.pack(side=ctk.RIGHT,
+                                expand=False,
+                                padx=(2, 0),
+                                pady=(2, 2))
+        table.pack(side=ctk.TOP)
 
     def create_tabview_button(self,
                               table_button_frame,
@@ -1119,6 +1122,7 @@ gui = GUI(root)
 controller = Controller(model=None, view=gui)
 gui.bind_controller(controller=controller)
 
-cef.Initialize(settings={}, switches={'disable-gpu': ""}) # disable gpu in order to avoid the pesky scaling issue
+# disable gpu in order to avoid the pesky scaling issue
+cef.Initialize(settings={}, switches={'disable-gpu': ""})
 root.mainloop()
 cef.Shutdown()

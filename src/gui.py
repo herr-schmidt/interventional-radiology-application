@@ -76,6 +76,78 @@ class EntryWithLabel(ctk.CTkFrame):
         self.label.destroy()
         super().destroy()
 
+class SliderWithEntry(ctk.CTkFrame):
+    def __init__(self,
+                 master,
+                 starting_value,
+                 ending_value,
+                 frame_color,
+                 entry_color,
+                 slider_color,
+                 slider_hover_color,
+                 label_text,
+                 label_color,
+                 label_text_color,
+                 label_text_font,
+                 entry_border_width=0,
+                 default_var_value=None,
+                 measure_unit_suffix="",
+                 entry_state=ctk.DISABLED,
+                 var_type=ctk.DoubleVar,
+                 **kwargs):
+        super(SliderWithEntry, self).__init__(master=master,
+                                             fg_color=frame_color,
+                                             **kwargs)
+        if not default_var_value:
+            default_var_value = starting_value
+
+        if measure_unit_suffix != "":
+            self.measure_unit_suffix = " " + measure_unit_suffix
+        else:
+            self.measure_unit_suffix = measure_unit_suffix
+
+        self.label = ctk.CTkLabel(master=self,
+                                  text=label_text,
+                                  text_color=label_text_color,
+                                  fg_color=label_color,
+                                  font=label_text_font)
+
+        if var_type is ctk.IntVar:
+            self.slider_var = ctk.IntVar()
+        else:
+            self.slider_var = ctk.DoubleVar()
+
+        self.slider_var.set(default_var_value)
+        self.slider = ctk.CTkSlider(master=self,
+                                    from_=starting_value,
+                                    to=ending_value,
+                                    variable=self.slider_var,
+                                    progress_color=slider_color,
+                                    button_color=slider_color,
+                                    button_hover_color=slider_hover_color,
+                                    fg_color="gray80",
+                                    command=self.update_entry)
+
+        self.entry_var = ctk.StringVar()
+        self.entry_var.set(str(self.slider_var.get()) + self.measure_unit_suffix)
+        self.entry = ctk.CTkEntry(master=self,
+                                  state=entry_state,
+                                  textvariable=self.entry_var,
+                                  border_width=entry_border_width,
+                                  fg_color=entry_color,
+                                  font=label_text_font,
+                                  width=90)
+
+        self.label.grid(row=0, column=0, sticky=ctk.W, padx=(10, 0), pady=(10, 0))
+        self.slider.grid(row=1, column=0, padx=(10, 0), pady=(5, 5))
+        self.entry.grid(row=1, column=1, padx=(10, 0), pady=(5, 5))
+        
+    def update_entry(self, event):
+        new_value = self.slider_var.get()
+        if type(self.slider_var) is ctk.DoubleVar:
+            new_value = round(new_value, 2)
+        
+        self.entry_var.set(str(new_value) + self.measure_unit_suffix)
 
 class GUI(object):
 
@@ -146,8 +218,139 @@ class GUI(object):
                   "69-40192": "69-40192",
                   "69-40191": "69-40191"
                   }
+    
+    class Dialog():
 
-    class InsertionDialog():
+        def __init__(self,
+                     parent_view,
+                     frame_color_1,
+                     frame_color_2,
+                     section_font,
+                     elements_font,
+                     labels_color,
+                     labels_text_color,
+                     entries_color,
+                     checkboxes_color,
+                     checkmarks_color):
+            
+            self.parent_view = parent_view
+            self.frame_color_1 = frame_color_1
+            self.frame_color_2 = frame_color_2
+            self.section_font = section_font
+            self.elements_font = elements_font
+            self.labels_color = labels_color
+            self.labels_text_color = labels_text_color
+            self.entries_color = entries_color
+            self.checkboxes_color = checkboxes_color
+            self.checkmarks_color = checkmarks_color
+
+            self.dialog = ctk.CTkToplevel(fg_color=frame_color_1)
+
+    class SolverOptionsDialog(Dialog):
+
+        def __init__(self,
+                     parent_view,
+                     frame_color_1,
+                     frame_color_2,
+                     section_font,
+                     elements_font,
+                     labels_color,
+                     labels_text_color,
+                     entries_color,
+                     checkboxes_color,
+                     checkmarks_color):
+            
+            super().__init__(parent_view,
+                             frame_color_1,
+                             frame_color_2,
+                             section_font,
+                             elements_font,
+                             labels_color,
+                             labels_text_color,
+                             entries_color,
+                             checkboxes_color,
+                             checkmarks_color)
+            
+            self.create_frame()
+            
+        def create_frame(self):
+
+            self.frame = ctk.CTkFrame(master=self.dialog, fg_color=self.frame_color_1, border_width=1, border_color="gray80")
+
+            self.title_label = ctk.CTkLabel(master=self.frame, text="Impostazioni solver", font=self.parent_view.SOURCE_SANS_PRO_MEDIUM, fg_color=self.labels_color, text_color=self.labels_text_color)
+            
+            self.gap_slider = SliderWithEntry(master=self.frame,
+                                              starting_value=0,
+                                              ending_value=5,
+                                              frame_color=self.frame_color_1,
+                                              entry_color=self.frame_color_1,
+                                              slider_color=self.parent_view.CRAYON_BLUE,
+                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                              label_text="Gap relativo",
+                                              label_color=self.labels_color,
+                                              label_text_color=self.labels_text_color,
+                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                              measure_unit_suffix="(%)")
+            
+            self.time_limit_slider = SliderWithEntry(master=self.frame,
+                                              starting_value=600,
+                                              ending_value=3600,
+                                              frame_color=self.frame_color_1,
+                                              entry_color=self.frame_color_1,
+                                              slider_color=self.parent_view.CRAYON_BLUE,
+                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                              label_text="Tempo limite",
+                                              label_color=self.labels_color,
+                                              label_text_color=self.labels_text_color,
+                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                              measure_unit_suffix="(s)",
+                                              var_type=ctk.IntVar)
+
+            self.robustness_param_slider = SliderWithEntry(master=self.frame,
+                                              starting_value=0,
+                                              ending_value=10,
+                                              frame_color=self.frame_color_1,
+                                              entry_color=self.frame_color_1,
+                                              slider_color=self.parent_view.CRAYON_BLUE,
+                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                              label_text="Parametro di robustezza",
+                                              label_color=self.labels_color,
+                                              label_text_color=self.labels_text_color,
+                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                              measure_unit_suffix="(pz./sala)",
+                                              var_type=ctk.IntVar)
+            
+            self.confirm_button = ctk.CTkButton(master=self.dialog,
+                                                text="Salva",
+                                                font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                                fg_color=self.parent_view.CRAYON_BLUE,
+                                                hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                                text_color=self.parent_view.WHITE,
+                                                command=self.save_solver_setup
+                                                )
+
+            self.frame.grid(padx=(20, 20), pady=(20, 20))
+            self.title_label.grid(row=0, column=0, padx=(10, 10), pady=(10, 0), sticky=ctk.W)
+            self.gap_slider.grid(row=1, column=0, padx=(10, 10), pady=(0, 0))
+            self.time_limit_slider.grid(row=2, column=0, padx=(10, 10), pady=(0, 0))
+            self.robustness_param_slider.grid(row=3, column=0, padx=(10, 10), pady=(0, 10))
+            self.confirm_button.grid(row=4, column=0, padx=(0, 20), pady=(0, 20), sticky=ctk.E)
+        
+        def save_solver_setup(self):
+            new_gap = self.gap_slider.slider_var.get()
+            new_timelimit = self.time_limit_slider.slider_var.get()
+            new_robustness_parameter = self.robustness_param_slider.slider_var.get()
+
+            self.parent_view.solver_gap = round(float(new_gap), 2)
+            self.parent_view.solver_time_limit = int(new_timelimit)
+            self.parent_view.solver_robustness_param = int(new_robustness_parameter)
+
+            self.parent_view.update_solver_summary()
+
+            self.dialog.destroy()
+
+
+    class InsertionDialog(Dialog):
 
         def __init__(self,
                      parent_view,
@@ -161,22 +364,19 @@ class GUI(object):
                      checkboxes_color,
                      checkmarks_color,
                      mode=DialogMode.ADD):
+            
+            super().__init__(parent_view,
+                             frame_color_1,
+                             frame_color_2,
+                             section_font,
+                             elements_font,
+                             labels_color,
+                             labels_text_color,
+                             entries_color,
+                             checkboxes_color,
+                             checkmarks_color)
 
-            self.parent_view = parent_view
             self.procedure_variables = {}
-
-            self.frame_color_1 = frame_color_1
-            self.frame_color_2 = frame_color_2
-            self.section_font = section_font
-            self.elements_font = elements_font
-            self.labels_color = labels_color
-            self.labels_text_color = labels_text_color
-            self.entries_color = entries_color
-            self.checkboxes_color = checkboxes_color
-            self.checkmarks_color = checkmarks_color
-
-            self.dialog = ctk.CTkToplevel(fg_color=frame_color_1)
-
             self.procedure_checkboxes = []
             self.checkbox_frames = []
             self.checkboxes_per_row = 4
@@ -591,6 +791,10 @@ class GUI(object):
         self.tables_dataframes = dict()
         self.tables_edit_buttons = dict()
 
+        self.solver_gap = 0
+        self.solver_time_limit = 600
+        self.solver_robustness_param = 2
+
         self.controller: Controller = None
 
         self.initializeUI()
@@ -757,9 +961,9 @@ class GUI(object):
                                                  text="Riepilogo impostazioni solver",
                                                  font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
 
-        self.gap_summary_label = self.create_summary_entry(label_text="Gap relativo tollerato (%): ")
-        self.time_limit_summary_label = self.create_summary_entry(label_text="Timeout (s): ")
-        self.robustness_summary_label = self.create_summary_entry(label_text="Parametro di robustezza: ")
+        self.gap_summary_label = self.create_summary_entry(label_text="Gap relativo tollerato: ", entry_text=str(self.solver_gap) + " (%)")
+        self.time_limit_summary_label = self.create_summary_entry(label_text="Timeout: ", entry_text=str(self.solver_time_limit) + " (s)")
+        self.robustness_summary_label = self.create_summary_entry(label_text="Parametro di robustezza: ", entry_text=str(self.solver_robustness_param) + " (pz./sala)")
 
         self.solution_summary_label = ctk.CTkLabel(master=self.summary_frame,
                                                  fg_color=(self.THEME1_COLOR2,
@@ -847,7 +1051,21 @@ class GUI(object):
                 table.switch_theme("light")
 
     def config_solver(self):
-        pass
+        dialog = self.SolverOptionsDialog(parent_view=self,
+                                          frame_color_1=(self.WHITE,
+                                                         self.THEME2_COLOR2),
+                                          frame_color_2=(self.THEME1_COLOR1,
+                                                         self.THEME2_COLOR1),
+                                          section_font=self.SOURCE_SANS_PRO_MEDIUM,
+                                          elements_font=self.SOURCE_SANS_PRO_SMALL,
+                                          labels_color=(self.WHITE,
+                                                        self.THEME2_COLOR2),
+                                          labels_text_color=(self.BLACK,
+                                                             self.WHITE),
+                                          entries_color=(self.THEME1_COLOR1,
+                                                         self.THEME2_COLOR1),
+                                          checkmarks_color=self.WHITE,
+                                          checkboxes_color=self.CRAYON_BLUE)
 
     def launch_solver(self):
         pass
@@ -921,6 +1139,11 @@ class GUI(object):
                                       checkmarks_color=self.WHITE,
                                       checkboxes_color=self.CRAYON_BLUE,
                                       mode=DialogMode.EDIT)
+        
+    def update_solver_summary(self):
+        self.gap_summary_label.entry_variable.set(str(self.solver_gap) + " (%)")
+        self.time_limit_summary_label.entry_variable.set(str(self.solver_time_limit) + " (s)")
+        self.robustness_summary_label.entry_variable.set(str(self.solver_robustness_param) + " (pz./sala)")
 
     def close_active_tab(self):
         active_tab = self.notebook.get()

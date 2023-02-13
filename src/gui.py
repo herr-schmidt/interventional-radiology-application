@@ -26,12 +26,7 @@ class EntryWithLabel(ctk.CTkFrame):
                  entry_font=("Source Sans Pro", 14),
                  entry_state=ctk.NORMAL,
                  label_font=("Source Sans Pro", 14),
-                 label_side=ctk.TOP,
-                 label_anchor=ctk.W,
-                 label_fill=ctk.X,
-                 entry_side=ctk.TOP,
-                 entry_anchor=ctk.W,
-                 entry_fill=ctk.X,
+                 label_position=ctk.LEFT,
                  **kwargs):
         super(EntryWithLabel, self).__init__(master=master,
                                              fg_color=frame_color,
@@ -55,21 +50,12 @@ class EntryWithLabel(ctk.CTkFrame):
                                   fg_color=label_color,
                                   font=label_font)
 
-        self.label_side = label_side
-        self.label_anchor = label_anchor
-        self.label_fill = label_fill
-        self.entry_side = entry_side
-        self.entry_anchor = entry_anchor
-        self.entry_fill = entry_fill
-
-    def pack(self, **kwargs):
-        ctk.CTkFrame.pack(self, **kwargs)
-        self.label.pack(side=self.label_side,
-                        anchor=self.label_anchor,
-                        fill=self.label_fill)
-        self.entry.pack(side=self.entry_side,
-                        anchor=self.entry_anchor,
-                        fill=self.entry_fill)
+        if label_position == ctk.TOP:
+            self.label.grid(row=0, column=0, sticky=ctk.NSEW)
+            self.entry.grid(row=1, column=0, sticky=ctk.NSEW)
+        else:
+            self.label.grid(row=0, column=0, sticky=ctk.NSEW)
+            self.entry.grid(row=0, column=1, sticky=ctk.NSEW)
 
     def destroy(self):
         self.entry.destroy()
@@ -379,12 +365,13 @@ class GUI(object):
             self.procedure_variables = {}
             self.procedure_checkboxes = []
             self.checkbox_frames = []
-            self.checkboxes_per_row = 4
+            self.checkboxes_per_row = 6
             self.checkbox_frames_number = ceil(len(self.parent_view.PROCEDURES.items()) / self.checkboxes_per_row)
 
             self.mode = mode
 
             self.summary_procedures_labels = {}
+            self.procedure_label_row = 1
 
             self.create_registry_frame()
             self.create_summary_frame()
@@ -399,16 +386,9 @@ class GUI(object):
             self.bind_summary_interaction()
 
         def pack_buttons(self):
-            self.button_frame.pack(side=ctk.BOTTOM, fill=ctk.X)
-            self.confirm_button.pack(side=ctk.RIGHT,
-                                     anchor=ctk.E,
-                                     padx=(0, 20),
-                                     pady=(0, 20))
-
-            self.cancel_button.pack(side=ctk.RIGHT,
-                                    anchor=ctk.E,
-                                    padx=(0, 20),
-                                    pady=(0, 20))
+            self.button_frame.grid(row=2, column=1, sticky=ctk.E, padx=(10, 10), pady=(0, 10))
+            self.confirm_button.pack(side=ctk.RIGHT, anchor=ctk.E, padx=(5, 0))
+            self.cancel_button.pack(side=ctk.RIGHT, anchor=ctk.E)
 
         def create_buttons(self):
             self.button_frame = ctk.CTkFrame(master=self.dialog,
@@ -432,33 +412,14 @@ class GUI(object):
                                                command=self.cancel)
 
         def pack_registry_frame(self):
-            self.registry_frame.pack(side=ctk.LEFT, fill=ctk.Y,
-                                     padx=(20, 10),
-                                     pady=(20, 20))
+            self.registry_frame.grid(row=0, column=0, sticky=ctk.NSEW, padx=(10, 5), pady=(10, 10))
 
-            self.registry_label.pack(side=ctk.TOP,
-                                     anchor=ctk.W,
-                                     padx=(20, 0),
-                                     pady=(20, 0))
-            self.name_entry.pack(side=ctk.TOP,
-                                 anchor=ctk.W,
-                                 padx=(20, 20))
-            self.surname_entry.pack(side=ctk.TOP,
-                                    anchor=ctk.W,
-                                    padx=(20, 20))
-
-            self.waiting_list_date_entry.pack(side=ctk.TOP,
-                                              anchor=ctk.W,
-                                              padx=(20, 20),
-                                              pady=(0, 5))
-            self.anesthesia_checkbox.pack(side=ctk.TOP,
-                                          anchor=ctk.W,
-                                          padx=(20, 20),
-                                          pady=(5, 5))
-            self.infections_checkbox.pack(side=ctk.TOP,
-                                          anchor=ctk.W,
-                                          padx=(20, 20),
-                                          pady=(0, 20))
+            self.registry_label.grid(row=0, column=0, sticky=ctk.NW, padx=(5, 10), pady=(5, 0))
+            self.name_entry.grid(row=1, column=0, sticky=ctk.NSEW, padx=(10, 10), pady=(0, 0))
+            self.surname_entry.grid(row=2, column=0, sticky=ctk.NSEW, padx=(10, 10), pady=(5, 0))
+            self.waiting_list_date_entry.grid(row=3, column=0, sticky=ctk.NSEW, padx=(10, 10), pady=(5, 0))
+            self.anesthesia_checkbox.grid(row=4, column=0, sticky=ctk.NSEW, padx=(10, 10), pady=(5, 0))
+            self.infections_checkbox.grid(row=5, column=0, sticky=ctk.NSEW, padx=(10, 10), pady=(5, 5))
 
         def create_registry_entry(self, label_text):
             return EntryWithLabel(self.registry_frame,
@@ -466,7 +427,8 @@ class GUI(object):
                                   frame_color=self.frame_color_1,
                                   label_color=self.labels_color,
                                   label_text_color=self.labels_text_color,
-                                  entry_color=self.frame_color_1)
+                                  entry_color=self.frame_color_1,
+                                  label_position=ctk.TOP)
 
         def create_registry_checkbox(self, label_text):
             variable = ctk.BooleanVar(False)
@@ -531,43 +493,36 @@ class GUI(object):
             summary_var.set(var.get())
 
         def pack_summary_frame(self):
-            self.summary_outer_frame.pack(side=ctk.BOTTOM,
-                                          fill=ctk.BOTH,
-                                          padx=(20, 20),
-                                          pady=(0, 20))
-            self.summary_frame.pack(side=ctk.BOTTOM,
-                                    fill=ctk.BOTH,
-                                    pady=(0, 20))
-            self.summary_registry_frame.pack(side=ctk.LEFT, fill=ctk.Y)
-            self.summary_procedure_frame.pack(side=ctk.LEFT, fill=ctk.BOTH)
+            self.summary_frame.grid_columnconfigure(0, weight=1)
+            self.summary_frame.grid(row=1, column=0, columnspan=2, sticky=ctk.NSEW, padx=(10, 10), pady=(0, 10))
 
-            self.summary_label.pack(side=ctk.TOP)
+            self.summary_label.grid(row=0, column=0, sticky=ctk.NSEW, padx=(5, 5), pady=(5, 5))
 
-            self.pack_summary_entry(self.summary_name_entry)
-            self.pack_summary_entry(self.summary_surname_entry)
-            self.pack_summary_entry(self.summary_date_entry)
-            self.pack_summary_entry(self.summary_anesthesia_entry)
-            self.pack_summary_entry(self.summary_infections_entry)
+            self.summary_entries_frame.grid(row=1, column=0, sticky=ctk.NSEW, padx=(5, 5), pady=(5, 5))
 
-            self.pack_summary_entry(self.summary_procedures_label,
-                                    padx=(10, 0),
-                                    fill=None)
+            self.summary_name_entry.grid(row=1, column=0, sticky=ctk.W, padx=(5, 5))
+            self.summary_surname_entry.grid(row=2, column=0, sticky=ctk.W, padx=(5, 5))
+            self.summary_date_entry.grid(row=3, column=0, sticky=ctk.W, padx=(5, 5))
+            self.summary_anesthesia_entry.grid(row=4, column=0, sticky=ctk.W, padx=(5, 5))
+            self.summary_infections_entry.grid(row=5, column=0, sticky=ctk.W, padx=(5, 5), pady=(0, 5))
 
-        def pack_summary_entry(self, summary_label, padx=(20, 10), fill=ctk.X):
-            summary_label.pack(side=ctk.TOP,
-                               anchor=ctk.W,
-                               padx=padx,
-                               pady=(0, 0),
-                               fill=fill)
+            self.summary_procedures_label.grid(row=1, column=1, sticky=ctk.W, padx=(10, 0))
+
+            self.selected_procedures_frame.grid(row=1, column=2, rowspan=5, sticky=ctk.NSEW, padx=(5, 5), pady=(0, 10))
 
         def create_summary_frame(self):
-            self.summary_outer_frame = ctk.CTkFrame(master=self.dialog,
-                                                    fg_color=self.frame_color_2)
-            self.summary_frame = ctk.CTkFrame(master=self.summary_outer_frame,
+            self.summary_frame = ctk.CTkFrame(master=self.dialog,
                                               fg_color=self.frame_color_2)
-
-            self.summary_registry_frame = ctk.CTkFrame(master=self.summary_frame,
-                                                       fg_color=self.frame_color_2)
+            
+            self.summary_label = ctk.CTkLabel(master=self.summary_frame,
+                                              fg_color=self.frame_color_2,
+                                              # corner_radius=0,
+                                              text="Riepilogo paziente",
+                                              font=self.parent_view.SOURCE_SANS_PRO_MEDIUM_BOLD)
+            
+            self.summary_entries_frame = ctk.CTkScrollableFrame(master=self.summary_frame,
+                                                                fg_color=self.frame_color_2,
+                                                                height=10)
 
             self.summary_name_entry = self.create_summary_entry("Nome: ")
             self.summary_surname_entry = self.create_summary_entry("Cognome: ")
@@ -575,22 +530,16 @@ class GUI(object):
             self.summary_anesthesia_entry = self.create_summary_entry("Anestesia: ", entry_text="No")
             self.summary_infections_entry = self.create_summary_entry("Infezioni in atto: ", entry_text="No")
 
-            self.summary_procedure_frame = ctk.CTkFrame(master=self.summary_frame,
-                                                        fg_color=self.frame_color_2)
-
-            self.summary_procedures_label = ctk.CTkLabel(master=self.summary_procedure_frame,
+            self.summary_procedures_label = ctk.CTkLabel(master=self.summary_entries_frame,
                                                          text="Procedure:",
                                                          font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                                          text_color=self.labels_text_color)
-
-            self.summary_label = ctk.CTkLabel(master=self.summary_outer_frame,
-                                              fg_color=self.frame_color_2,
-                                              # corner_radius=0,
-                                              text="Riepilogo paziente",
-                                              font=self.parent_view.SOURCE_SANS_PRO_MEDIUM_BOLD)
+            
+            self.selected_procedures_frame = ctk.CTkFrame(master=self.summary_entries_frame,
+                                                                    fg_color=self.frame_color_2)
 
         def create_summary_entry(self, label_text, entry_text=""):
-            return EntryWithLabel(master=self.summary_registry_frame,
+            return EntryWithLabel(master=self.summary_entries_frame,
                                   label_text=label_text,
                                   entry_default_text=entry_text,
                                   label_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
@@ -600,38 +549,25 @@ class GUI(object):
                                   label_text_color=self.labels_text_color,
                                   entry_color=self.frame_color_2,
                                   entry_border_width=0,
-                                  entry_state=ctk.DISABLED,
-                                  label_side=ctk.LEFT,
-                                  label_anchor=ctk.W,
-                                  entry_side=ctk.RIGHT,
-                                  entry_anchor=ctk.E)
+                                  entry_state=ctk.DISABLED)
 
         def pack_procedure_frame(self):
-            self.procedures_frame.pack(side=ctk.RIGHT, fill=ctk.Y,
-                                       padx=(10, 20),
-                                       pady=(20, 20))
-            self.procedures_label.pack(side=ctk.TOP,
-                                       anchor=ctk.NW,
-                                       padx=(20, 0),
-                                       pady=(20, 0))
-            self.procedures_label_searchbox.pack(side=ctk.TOP,
-                                                 anchor=ctk.NW,
-                                                 padx=(20, 0))
+            self.procedures_frame.grid_columnconfigure(1, weight=1)
+            self.procedures_frame.grid(row=0, column=1, sticky=ctk.NSEW, padx=(5, 10), pady=(10, 10))
 
-            self.pack_checkbox_frames()
-            self.pack_procedure_checkboxes()
+            self.procedures_label.grid(row=0, column=0, sticky=ctk.NW, padx=(5, 5), pady=(5, 0))
+            self.procedures_label_searchbox.grid(row=1, column=0, sticky=ctk.NSEW, padx=(5, 5), pady=(5, 0))
 
-        def pack_checkbox_frames(self):
-            for idx in range(0, self.checkbox_frames_number):
-                pady = (0, 0)
-                if idx == 0:
-                    pady = (20, 0)
-                if idx == self.checkbox_frames_number - 1:
-                    pady = (0, 20)
-                self.checkbox_frames[idx].pack(side=ctk.TOP,
-                                               padx=(20, 1),
-                                               pady=pady,
-                                               fill=ctk.X)
+            self.procedures_checkboxes_frame.grid(row=4, column=0, sticky=ctk.NSEW, padx=(5, 5), pady=(5, 5))
+
+            row = 0
+            column = 0
+
+            for checkbox in self.procedure_checkboxes:
+                checkbox.grid(row=row, column=column % self.checkboxes_per_row, sticky=ctk.NSEW)
+                column += 1
+                if column % self.checkboxes_per_row == 0:
+                    row += 1
 
         def create_procedure_frame(self):
             self.procedures_frame = ctk.CTkFrame(master=self.dialog,
@@ -654,20 +590,11 @@ class GUI(object):
                                                                      callback=lambda *_,
                                                                      var=self.procedures_label_searchbox.entry_variable: self.filter_procedures(var))
 
+            self.procedures_checkboxes_frame = ctk.CTkFrame(master=self.procedures_frame,
+                                                            fg_color=self.frame_color_1,
+                                                            border_width=0)
+
             self.initialize_procedure_checkboxes()
-
-        def initialize_procedure_checkboxes(self):
-            for _ in range(0, self.checkbox_frames_number):
-                row_frame = ctk.CTkFrame(master=self.procedures_frame,
-                                         fg_color=self.frame_color_1)
-                self.checkbox_frames.append(row_frame)
-
-            for procedure in self.parent_view.PROCEDURES.items():
-                procedure_variable = ctk.BooleanVar(False)
-                self.procedure_variables[procedure[0]] = procedure_variable
-
-            self.create_procedure_checkboxes(
-                procedures=list(self.parent_view.PROCEDURES.items()))
 
         def cancel(self):
             self.dialog.destroy()
@@ -710,61 +637,51 @@ class GUI(object):
 
         def filter_procedures(self, var):
             pattern = var.get()
-            filtered_procedures = []
             if pattern == "":
-                filtered_procedures = list(self.parent_view.PROCEDURES.items())
+                for procedure_checkbox in self.procedure_checkboxes:
+                    procedure_checkbox.configure(bg_color="transparent")
             else:
-                for procedure in self.parent_view.PROCEDURES.items():
-                    if re.search(pattern.lower(), procedure[1].lower()) is not None:
-                        filtered_procedures.append(procedure)
-
-            self.create_procedure_checkboxes(procedures=filtered_procedures)
-            self.pack_procedure_checkboxes()
-
+                for procedure_checkbox in self.procedure_checkboxes:
+                    checkbox_text = procedure_checkbox.cget("text")
+                    if re.search(pattern.lower(), checkbox_text.lower()) is not None:
+                        procedure_checkbox.configure(bg_color="#BBF2D3")
+                    else:
+                        procedure_checkbox.configure(bg_color="transparent")
         def pack_procedure_checkboxes(self):
             for checkbox in self.procedure_checkboxes:
                 checkbox.pack(side=ctk.LEFT,
                               anchor=ctk.W,
                               padx=(0, 20))
 
-        def create_procedure_checkboxes(self, procedures):
-            if len(procedures) == len(self.procedure_checkboxes):
-                return
+        def initialize_procedure_checkboxes(self):
+            procedures = list(self.parent_view.PROCEDURES.items())
+            for procedure in procedures:
+                procedure_variable = ctk.BooleanVar(False)
+                self.procedure_variables[procedure[0]] = procedure_variable
 
-            for checkbox in self.procedure_checkboxes:
-                checkbox.destroy()
-
-            self.procedure_checkboxes = []
-
-            for frame in self.checkbox_frames:
-                frame_checkboxes = 0
-                while frame_checkboxes < self.checkboxes_per_row and procedures:
-                    procedure = procedures.pop(0)
-                    procedure_variable = self.procedure_variables[procedure[0]]
-                    procedure_checkbox = ctk.CTkCheckBox(master=frame,
-                                                         variable=procedure_variable,
-                                                         border_color="gray80",
-                                                         border_width=1,
-                                                         hover=False,
-                                                         text=procedure[0],
-                                                         text_color=self.labels_text_color,
-                                                         font=self.elements_font,
-                                                         checkmark_color=self.checkmarks_color,
-                                                         fg_color=self.checkboxes_color,
-                                                         checkbox_height=15,
-                                                         checkbox_width=15,
-                                                         corner_radius=3,
-                                                         command=lambda *_, procedure_code=procedure[0], procedure_variable=procedure_variable: self.update_summary_procedures(procedure_code, procedure_variable))
-                    self.procedure_checkboxes.append(procedure_checkbox)
-                    frame_checkboxes += 1
-
-                if not procedures:
-                    break
+                procedure_variable = self.procedure_variables[procedure[0]]
+                procedure_checkbox = ctk.CTkCheckBox(master=self.procedures_checkboxes_frame,
+                                                        variable=procedure_variable,
+                                                        border_color="gray80",
+                                                        border_width=1,
+                                                        hover=False,
+                                                        text=procedure[0],
+                                                        text_color=self.labels_text_color,
+                                                        font=self.elements_font,
+                                                        checkmark_color=self.checkmarks_color,
+                                                        fg_color=self.checkboxes_color,
+                                                        checkbox_height=15,
+                                                        checkbox_width=15,
+                                                        corner_radius=3,
+                                                        command=lambda *_,
+                                                        procedure_code=procedure[0],
+                                                        procedure_variable=procedure_variable: self.update_summary_procedures(procedure_code, procedure_variable))
+                self.procedure_checkboxes.append(procedure_checkbox)
 
         def update_summary_procedures(self, procedure_code, procedure_variable):
             if procedure_variable.get():
                 text = "￮ " + procedure_code + " " + self.parent_view.PROCEDURES[procedure_code]
-                summary_label = ctk.CTkLabel(master=self.summary_procedure_frame,
+                summary_label = ctk.CTkLabel(master=self.selected_procedures_frame,
                                              text=text)
                 self.summary_procedures_labels[procedure_code] = summary_label
                 summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(20, 0))
@@ -805,26 +722,24 @@ class GUI(object):
     def initializeUI(self):
         self.theme = "light"
 
+        # expand all content vertically
+        self.master.grid_rowconfigure(0, weight=1)
+
+        # expand notebook horizontally column: take 1 of each free pixel
+        self.master.grid_columnconfigure(1, weight=1)
+
         # left toolbar frame
         self.toolbar_frame = ctk.CTkFrame(master=self.master,
                                           fg_color=(self.THEME1_COLOR2,
                                                     self.THEME2_COLOR2),
                                           corner_radius=0,
                                           width=self.toolbar_width)
-        self.toolbar_frame.pack(side=ctk.LEFT, fill=ctk.Y, expand=False)
-
-        # log output and footer
-        self.right_frame = ctk.CTkFrame(master=self.master,
-                                        fg_color=(self.THEME1_COLOR1,
-                                                  self.THEME2_COLOR1),
-                                        corner_radius=0)
-        self.right_frame.pack(side=ctk.RIGHT, fill=ctk.BOTH, expand=True)
+        
+        self.toolbar_frame.grid(row=0, column=0, sticky=ctk.NSEW)
 
         self.create_toolbar()
         self.create_summary_frame()
         self.create_notebook()
-
-        # self.create_log_text_box()
 
         print(self.WELCOME_MESSAGE)
 
@@ -843,103 +758,34 @@ class GUI(object):
                               entry_color=(self.WHITE,
                                            self.THEME2_COLOR2),
                               entry_border_width=0,
-                              entry_state=ctk.DISABLED,
-                              label_side=ctk.LEFT,
-                              label_anchor=ctk.W,
-                              entry_side=ctk.RIGHT,
-                              entry_anchor=ctk.E)
+                              entry_state=ctk.DISABLED)
 
     def pack_summary_frame(self):
-        self.summary_frame.pack(side=ctk.RIGHT,
-                                fill=ctk.Y,
-                                expand=False,
-                                padx=(10, 20),
-                                pady=(20, 20))
+        self.summary_frame.grid(row=0, column=2, sticky=ctk.NSEW, padx=(10, 10), pady=(18, 10))
 
-        self.summary_label.pack(side=ctk.TOP,
-                                anchor=ctk.W,
-                                padx=(20, 20),
-                                pady=(20, 0))
+        self.summary_label.grid(row=0, column= 0, sticky=ctk.NW, padx=(20, 20), pady=(10, 0))
+        self.total_patients_summary_entry.grid(row=1, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.total_anesthesia_patients_summary_entry.grid(row=2, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.total_infectious_patients_summary_entry.grid(row=3, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
 
-        self.total_patients_summary_entry.pack(side=ctk.TOP,
-                                               anchor=ctk.W,
-                                               padx=(20, 20),
-                                               pady=(0, 0))
+        self.solver_summary_label.grid(row=4, column= 0, sticky=ctk.NW, padx=(20, 20), pady=(10, 0))
+        self.gap_summary_label.grid(row=5, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.time_limit_summary_label.grid(row=6, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.robustness_summary_label.grid(row=7, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
 
-        self.total_anesthesia_patients_summary_entry.pack(side=ctk.TOP,
-                                                          anchor=ctk.W,
-                                                          padx=(20, 20),
-                                                          pady=(0, 0))
+        self.solution_summary_label.grid(row=8, column= 0, sticky=ctk.NW, padx=(20, 20), pady=(10, 0))
+        self.selected_patients_label.grid(row=9, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.anesthesia_selected_patients_label.grid(row=10, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.infectious_selected_patients_label.grid(row=11, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.delayed_selected_patients_label.grid(row=12, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.average_OR1_utilization_label.grid(row=13, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.average_OR2_utilization_label.grid(row=14, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.average_OR3_utilization_label.grid(row=15, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.average_OR4_utilization_label.grid(row=16, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
 
-        self.total_infectious_patients_summary_entry.pack(side=ctk.TOP,
-                                                          anchor=ctk.W,
-                                                          padx=(20, 20),
-                                                          pady=(0, 0))
-
-        self.solver_summary_label.pack(side=ctk.TOP,
-                                       anchor=ctk.W,
-                                       padx=(20, 20),
-                                       pady=(20, 0))
-
-        self.gap_summary_label.pack(side=ctk.TOP,
-                                    anchor=ctk.W,
-                                    padx=(20, 20),
-                                    pady=(0, 0))
-
-        self.time_limit_summary_label.pack(side=ctk.TOP,
-                                           anchor=ctk.W,
-                                           padx=(20, 20),
-                                           pady=(0, 0))
-        
-        self.robustness_summary_label.pack(side=ctk.TOP,
-                                           anchor=ctk.W,
-                                           padx=(20, 20),
-                                           pady=(0, 0))
-        
-        self.solution_summary_label.pack(side=ctk.TOP,
-                                       anchor=ctk.W,
-                                       padx=(20, 20),
-                                       pady=(20, 0))
-        
-        self.selected_patients_label.pack(side=ctk.TOP,
-                                          anchor=ctk.W,
-                                          padx=(20, 20),
-                                          pady=(0, 0))
-        
-        self.anesthesia_selected_patients_label.pack(side=ctk.TOP,
-                                                     anchor=ctk.W,
-                                                     padx=(20, 20),
-                                                     pady=(0, 0))
-        
-        self.infectious_selected_patients_label.pack(side=ctk.TOP,
-                                                     anchor=ctk.W,
-                                                     padx=(20, 20),
-                                                     pady=(0, 0))
-
-        self.delayed_selected_patients_label.pack(side=ctk.TOP,
-                                                  anchor=ctk.W,
-                                                  padx=(20, 20),
-                                                  pady=(0, 0))
-
-        self.average_OR1_utilization_label.pack(side=ctk.TOP,
-                                                anchor=ctk.W,
-                                                padx=(20, 20),
-                                                pady=(0, 0))
-        self.average_OR2_utilization_label.pack(side=ctk.TOP,
-                                                anchor=ctk.W,
-                                                padx=(20, 20),
-                                                pady=(0, 0))
-        self.average_OR3_utilization_label.pack(side=ctk.TOP,
-                                                anchor=ctk.W,
-                                                padx=(20, 20),
-                                                pady=(0, 0))
-        self.average_OR4_utilization_label.pack(side=ctk.TOP,
-                                                anchor=ctk.W,
-                                                padx=(20, 20),
-                                                pady=(0, 0))
 
     def create_summary_frame(self):
-        self.summary_frame = ctk.CTkFrame(master=self.right_frame,
+        self.summary_frame = ctk.CTkFrame(master=self.master,
                                           fg_color=(self.THEME1_COLOR2,
                                                     self.THEME2_COLOR2),
                                           corner_radius=3,
@@ -983,14 +829,13 @@ class GUI(object):
         self.pack_summary_frame()
 
     def create_toolbar(self):
-
         self.new_sheet_button = self.create_toolbar_button("resources/new.png",
                                                            "resources/new_w.png",
                                                            self.new_planning_callback,
                                                            "Nuova scheda"
                                                            )
-        self.import_excel_button = self.create_toolbar_button("resources/xlsx.png",
-                                                              "resources/xlsx_w.png",
+        self.import_excel_button = self.create_toolbar_button("resources/import_excel.png",
+                                                              "resources/import_excel_w.png",
                                                               self.import_callback,
                                                               text="Importa da file Excel",
                                                               )
@@ -999,40 +844,29 @@ class GUI(object):
                                                                self.config_solver,
                                                                text="Impostazioni solver"
                                                                )
-        self.run_button = self.create_toolbar_button("resources/run.png",
-                                                     "resources/run_w.png",
-                                                     self.launch_solver,
-                                                     text="Calcola pianificazione"
-                                                     )
-        self.stop_button = self.create_toolbar_button("resources/stop.png",
-                                                      "resources/stop_w.png",
-                                                      self.stop_solver,
-                                                      text="Interrompi pianificazione"
-                                                      )
-
-        self.new_sheet_button.pack(side=ctk.TOP,
-                                   expand=False,
-                                   fill=ctk.X)
-        self.import_excel_button.pack(side=ctk.TOP,
-                                      expand=False,
-                                      fill=ctk.X)
-        self.solver_config_button.pack(side=ctk.TOP,
-                                       expand=False,
-                                       fill=ctk.X,
-                                       pady=(50, 0))
-        self.run_button.pack(side=ctk.TOP,
-                             expand=False,
-                             fill=ctk.X)
-        self.stop_button.pack(side=ctk.TOP,
-                              expand=False,
-                              fill=ctk.X)
+        # self.run_button = self.create_toolbar_button("resources/run.png",
+        #                                              "resources/run_w.png",
+        #                                              self.launch_solver,
+        #                                              text="Calcola pianificazione"
+        #                                              )
+        # self.stop_button = self.create_toolbar_button("resources/stop.png",
+        #                                               "resources/stop_w.png",
+        #                                               self.stop_solver,
+        #                                               text="Interrompi pianificazione"
+        #                                               )
 
         self.theme_mode_switch = ctk.CTkSwitch(master=self.toolbar_frame,
                                                text="Modalità notturna",
                                                font=self.SOURCE_SANS_PRO_SMALL,
                                                command=self.switch_theme_mode,
                                                progress_color=self.DARK_CRAYON_BLUE)
-        self.theme_mode_switch.pack(side=ctk.BOTTOM, pady=(0, 20))
+
+        self.new_sheet_button.grid(row=0, column=0, sticky=ctk.NSEW)
+        self.import_excel_button.grid(row=1, column=0, sticky=ctk.NSEW)
+        self.solver_config_button.grid(row=2, column=0, sticky=ctk.NSEW)
+
+        self.toolbar_frame.grid_rowconfigure(3, weight=1)
+        self.theme_mode_switch.grid(row=3, column=0, sticky=ctk.S, pady=(0, 20))
 
     def switch_theme_mode(self):
         if self.theme == "light":
@@ -1215,20 +1049,17 @@ class GUI(object):
         controller.create_empty_planning()
 
     def create_notebook(self):
-        self.notebook = ctk.CTkTabview(self.right_frame,
+        self.notebook = ctk.CTkTabview(self.master,
                                        fg_color=(self.WHITE,
                                                  self.THEME2_COLOR2),
                                        segmented_button_selected_color=self.CRAYON_BLUE,
                                        segmented_button_selected_hover_color=self.DARK_CRAYON_BLUE,
                                        corner_radius=3,
-                                       width=self.notebook_width,
-                                       height=self.notebook_height,
+                                       # width=self.notebook_width,
+                                       # height=400,
                                        command=self.update_patients_summary)
-        self.notebook.pack(side=ctk.TOP,
-                           expand=False,
-                           fill=ctk.BOTH,
-                           padx=(20, 10),
-                           pady=(0, 20))
+        
+        self.notebook.grid(row=0, column=1, sticky=ctk.NSEW, padx=(10, 0), pady=(0, 10))
 
     def on_row_interaction(self, event):
         active_table_index = self.notebook.get()
@@ -1308,7 +1139,7 @@ class GUI(object):
                       header_height=40,
                       fit_criterion=FitCriterion.FIT_HEADER_AND_COL_MAX_LENGTH,
                       row_separator_width=1,
-                      pagination_size=20,
+                      pagination_size=30,
                       theme=self.theme,
                       even_row_colors=("#ffffff", self.THEME2_COLOR2),
                       height=100)
@@ -1393,22 +1224,6 @@ class GUI(object):
         button.bind("<Enter>", command=self.hover_button, add="+")
 
         return button
-
-    def create_log_text_box(self):
-        self.text_box = ctk.CTkTextbox(master=self.right_frame,
-                                       fg_color=(self.WHITE,
-                                                 self.THEME2_COLOR2),
-                                       text_color=(self.BLACK, self.WHITE),
-                                       font=self.SOURCE_SANS_PRO_SMALL,
-                                       corner_radius=3,
-                                       height=self.textbox_height)
-        self.text_box.pack(side=ctk.BOTTOM,
-                           fill=ctk.BOTH,
-                           expand=False,
-                           padx=(20, 10),
-                           pady=(10, 20))
-
-        sys.stdout = StdoutRedirector(self.text_box)
 
 
 root = ctk.CTk()

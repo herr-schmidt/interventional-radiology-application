@@ -10,6 +10,7 @@ from math import ceil, floor
 from util import StdoutRedirector, DialogMode
 import pandas as pd
 from embedded_browser import MainBrowserFrame, cef
+import data
 
 
 class EntryWithLabel(ctk.CTkFrame):
@@ -158,7 +159,8 @@ class GUI(object):
 
     PLANNING_HEADER = {"Nome": [],
                        "Cognome": [],
-                       "Specialità": [],
+                       "Specialità richiesta": [],
+                       "Reparto di provenienza": [],
                        "Prestazioni": [],
                        "Anestesia": [],
                        "Infezioni": [],
@@ -288,6 +290,7 @@ class GUI(object):
                              checkboxes_color,
                              checkmarks_color)
             
+            self.dialog.grab_set()
             self.create_frame()
             
         def create_frame(self):
@@ -404,6 +407,7 @@ class GUI(object):
             self.summary_procedures_labels = {}
             self.procedure_label_row = 1
 
+            self.dialog.grab_set()
             self.create_registry_frame()
             self.create_summary_frame()
             self.create_procedure_frame()
@@ -1056,6 +1060,7 @@ class GUI(object):
         controller.import_sheet(selected_file=selected_file)
 
     def launch_optimization(self):
+        parameter_dict = self.initialize_data_from_table()
         optimization_dialog = self.OptimizationProgressDialog(parent_view=self,
                                           frame_color_1=(self.WHITE,
                                                          self.THEME2_COLOR2),
@@ -1225,15 +1230,140 @@ class GUI(object):
                                  expand=False,
                                  padx=(2, 0),
                                  pady=(2, 2))
-        interactive_planning_button.pack(side=ctk.RIGHT,
-                                         expand=False,
-                                         padx=(2, 0),
-                                         pady=(2, 2))
         switch_view_button.pack(side=ctk.RIGHT,
                                 expand=False,
                                 padx=(2, 0),
                                 pady=(2, 2))
+        interactive_planning_button.pack(side=ctk.RIGHT,
+                                         expand=False,
+                                         padx=(2, 1),
+                                         pady=(2, 2))
         table.pack(side=ctk.TOP)
+
+    def list_to_dict(self, list):
+        items = len(list)
+        return {key: value for (key, value) in zip([i for i in range(1, items + 1)], list)}
+    
+    # we assume the same timespan for each room, on each day
+    def generate_room_availability_table(self, operating_rooms, time_horizon, operating_room_time):
+        return {(k, t): operating_room_time for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
+    
+    # we assume same availability for each anesthetist
+    def generate_anesthetists_availability_table(self, anesthetists, time_horizon, anesthetists_availability):
+        return {(a, t): anesthetists_availability for a in range(1, anesthetists + 1) for t in range(1, time_horizon + 1)}
+    
+    def generate_room_specialty_mapping(self, specialties, operating_rooms, time_horizon):
+        table = {(j, k, t): 0 for j in range(1, specialties + 1) for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
+        for key in table.keys():
+            if key[0] == 1 and (key[1] in [1, 2]):
+                table[key] = 1
+            if key[0] == 2 and (key[1] in [3, 4]):
+                table[key] = 1
+        return table
+    
+    def generate_procedures_durations(self, procedures):
+        procedures_durations = {}
+        for item in procedures.items():
+            services = item[1] # is a string of the form "69-8847|69-88495"
+            services_key = frozenset(services.split("|"))
+            procedures_durations[item[0]] = data.surgery_room_occupancy_mapping[services_key]
+
+        return procedures_durations
+    
+    def generate_procedures_delays(self, origin_wards):
+        procedures_delays = {}
+        for item in origin_wards.items():
+            origin_ward = item[1] # is a string, for now. Better translate such strings to some code
+            procedures_delays[item[0]] = data.ward_arrival_delay_mapping[origin_ward]
+
+        return procedures_delays
+    
+    def compute_precedences(self, procedures, infection_flags):
+        precedences = {}
+        for item in procedures.items():
+            services = item[1] # is a string of the form "69-8847|69-88495"
+            services_key = frozenset(services.split("|"))
+            if data.dirty_surgery_mapping[services_key] == 0 and infection_flags[item[0]] == 0:
+                precedences[item[0]] = 1
+            if data.dirty_surgery_mapping[services_key] == 1 and infection_flags[item[0]] == 0:
+                precedences[item[0]] = 2
+            if data.dirty_surgery_mapping[services_key] == 0 and infection_flags[item[0]] == 1:
+                precedences[item[0]] = 3
+            if data.dirty_surgery_mapping[services_key] == 1 and infection_flags[item[0]] == 1:
+                precedences[item[0]] = 4
+        
+        return precedences
+    
+    def compute_u_parameters(self, patients, precedences):
+        u = {}
+        for i1 in range(1, patients + 1):
+            for i2 in range(1, patients + 1):
+                u[(i1, i2)] = 0
+                u[(i2, i1)] = 0
+
+                if i1 == i2:
+                    continue
+                if precedences[i1] < precedences[i2]:
+                    u[(i1, i2)] = 1
+                if precedences[i2] < precedences[i1]:
+                    u[(i2, i1)] = 1
+        return u
+
+    # compute a dict containing parameters for the model, needed by the solver
+    def initialize_data_from_table(self):
+        active_tab_name = self.notebook.get()
+        data_frame = self.tables_dataframes[active_tab_name][0]
+
+        patients = len(data_frame)
+        specialties_number = 2
+        operating_rooms = 4
+        time_horizon = 5
+        anesthetists = 1
+        max_operating_room_time = 270
+
+        patient_ids = self.list_to_dict([i for i in range(1, patients + 1)])
+        anesthesia_flags = self.list_to_dict(data_frame.loc[:,"Anestesia"])
+        infection_flags = self.list_to_dict(data_frame.loc[:,"Infezioni"])
+        specialties = self.list_to_dict(data_frame.loc[:,"Specialità richiesta"])
+        origin_wards = self.list_to_dict(data_frame.loc[:,"Reparto di provenienza"])
+        procedures = self.list_to_dict(data_frame.loc[:,"Prestazioni"])
+        waiting_list_insertion_dates = self.list_to_dict(data_frame.loc[:,"Data inserimento in lista"])
+        procedures_durations = self.generate_procedures_durations(procedures)
+        procedures_delays = self.generate_procedures_delays(origin_wards)
+        precedences = self.compute_precedences(procedures, infection_flags)
+
+        return {
+            None: {
+                'I': {None: patients},
+                'J': {None: specialties_number},
+                'K': {None: operating_rooms},
+                'T': {None: time_horizon},
+                'A': {None: anesthetists},
+                'M': {None: 7},
+                'Q': {None: 1},
+                's': self.generate_room_availability_table(operating_rooms, time_horizon, max_operating_room_time),
+                'An': self.generate_anesthetists_availability_table(anesthetists, time_horizon, max_operating_room_time),
+                'Gamma': self.solver_robustness_param,
+                'tau': self.generate_room_specialty_mapping(specialties_number, operating_rooms, time_horizon),
+                'p': procedures_durations,
+                'd': procedures_delays,
+                'r': None,
+                'a': anesthesia_flags,
+                'c': infection_flags,
+                'u': self.compute_u_parameters(patients, precedences),
+                'patientId': patient_ids,
+                'specialty': specialties,
+                'precedence': precedences,
+                'bigM': {
+                    1: floor(max_operating_room_time/min([operating_time for operating_time in procedures_durations.values()])),
+                    2: max_operating_room_time,
+                    3: max_operating_room_time,
+                    4: max_operating_room_time,
+                    5: max_operating_room_time,
+                    6: patients
+                }
+            }
+        }
 
     def update_patients_summary(self):
         current_tab_name = self.notebook.get()

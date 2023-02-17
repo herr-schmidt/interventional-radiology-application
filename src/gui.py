@@ -7,10 +7,12 @@ import customtkinter as ctk
 from bootstraptable import Table, FitCriterion
 from controller import Controller
 from math import ceil, floor
+from planners import HeuristicLBBDPlanner, SolutionVisualizer
 from util import StdoutRedirector, DialogMode
 import pandas as pd
 from embedded_browser import MainBrowserFrame, cef
 import data
+from datetime import datetime
 
 
 class EntryWithLabel(ctk.CTkFrame):
@@ -263,6 +265,9 @@ class GUI(object):
             progress_bar = ctk.CTkProgressBar(master=self.dialog, fg_color="gray90", progress_color=checkboxes_color, mode="indeterminate")
             progress_bar.pack()
             progress_bar.start()
+
+        def destroy(self):
+            self.dialog.destroy()
 
 
     class SolverOptionsDialog(Dialog):
@@ -1076,6 +1081,17 @@ class GUI(object):
                                                          self.THEME2_COLOR1),
                                           checkmarks_color=self.WHITE,
                                           checkboxes_color=self.CRAYON_BLUE)
+        
+        planner = HeuristicLBBDPlanner(timeLimit=self.solver_time_limit, gap=self.solver_gap, iterations_cap=10, solver="cbc")
+        planner.solve_model(parameter_dict)
+        run_info = planner.extract_run_info()
+        solution = planner.extract_solution()
+        if solution:
+            sv = SolutionVisualizer()
+            sv.print_solution(solution)
+            sv.plot_graph(solution)
+
+        optimization_dialog.destroy()
 
     def export_callback(self):
         selected_filetype = ctk.StringVar()
@@ -1274,7 +1290,7 @@ class GUI(object):
         procedures_delays = {}
         for item in origin_wards.items():
             origin_ward = item[1] # is a string, for now. Better translate such strings to some code
-            procedures_delays[item[0]] = data.ward_arrival_delay_mapping[origin_ward]
+            procedures_delays[(1, item[0])] = data.ward_arrival_delay_mapping[origin_ward]
 
         return procedures_delays
     
@@ -1286,11 +1302,11 @@ class GUI(object):
             if data.dirty_surgery_mapping[services_key] == 0 and infection_flags[item[0]] == 0:
                 precedences[item[0]] = 1
             if data.dirty_surgery_mapping[services_key] == 1 and infection_flags[item[0]] == 0:
-                precedences[item[0]] = 2
-            if data.dirty_surgery_mapping[services_key] == 0 and infection_flags[item[0]] == 1:
                 precedences[item[0]] = 3
+            if data.dirty_surgery_mapping[services_key] == 0 and infection_flags[item[0]] == 1:
+                precedences[item[0]] = 5
             if data.dirty_surgery_mapping[services_key] == 1 and infection_flags[item[0]] == 1:
-                precedences[item[0]] = 4
+                precedences[item[0]] = 5 # for now...
         
         return precedences
     
@@ -1308,6 +1324,21 @@ class GUI(object):
                 if precedences[i2] < precedences[i1]:
                     u[(i2, i1)] = 1
         return u
+    
+    # compute priorities (r_i) with respect to planning day
+    def compute_priorities(self, waiting_list_insertion_dates, MTBTs):
+        today = pd.Timestamp(datetime.now())
+        priorities = []
+
+        for (insertion_date, mtbt) in zip(waiting_list_insertion_dates.values(), MTBTs.values()):
+            delta = (today - insertion_date).days
+            priorities.append(100 * delta / mtbt)
+
+        return self.list_to_dict(priorities)
+
+    # assume same robustness_parameter value for each (k, t) slot (single delay type q = 1)
+    def compute_robustness_table(self, operating_rooms, time_horizon, robustness_parameter):
+        return {(1, k, t): robustness_parameter for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
 
     # compute a dict containing parameters for the model, needed by the solver
     def initialize_data_from_table(self):
@@ -1328,9 +1359,12 @@ class GUI(object):
         origin_wards = self.list_to_dict(data_frame.loc[:,"Reparto di provenienza"])
         procedures = self.list_to_dict(data_frame.loc[:,"Prestazioni"])
         waiting_list_insertion_dates = self.list_to_dict(data_frame.loc[:,"Data inserimento in lista"])
+        MTBTs = self.list_to_dict(data_frame.loc[:,"MTBT (giorni)"])
+        priorities = self.compute_priorities(waiting_list_insertion_dates, MTBTs)
         procedures_durations = self.generate_procedures_durations(procedures)
         procedures_delays = self.generate_procedures_delays(origin_wards)
         precedences = self.compute_precedences(procedures, infection_flags)
+        robustness_parameters = self.compute_robustness_table(operating_rooms, time_horizon, self.solver_robustness_param)
 
         return {
             None: {
@@ -1343,11 +1377,11 @@ class GUI(object):
                 'Q': {None: 1},
                 's': self.generate_room_availability_table(operating_rooms, time_horizon, max_operating_room_time),
                 'An': self.generate_anesthetists_availability_table(anesthetists, time_horizon, max_operating_room_time),
-                'Gamma': self.solver_robustness_param,
+                'Gamma': robustness_parameters,
                 'tau': self.generate_room_specialty_mapping(specialties_number, operating_rooms, time_horizon),
                 'p': procedures_durations,
                 'd': procedures_delays,
-                'r': None,
+                'r': priorities,
                 'a': anesthesia_flags,
                 'c': infection_flags,
                 'u': self.compute_u_parameters(patients, precedences),

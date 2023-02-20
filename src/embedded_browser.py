@@ -19,7 +19,7 @@ logger = _logging.getLogger("tkinter_.py")
 
 class MainBrowserFrame(tk.Frame):
 
-    def __init__(self, root):
+    def __init__(self, root, file_path):
         self.browser_frame = None
 
         # Root
@@ -35,7 +35,7 @@ class MainBrowserFrame(tk.Frame):
         self.bind("<FocusOut>", self.on_focus_out)
 
         # BrowserFrame
-        self.browser_frame = BrowserFrame(self)
+        self.browser_frame = BrowserFrame(self, file_path)
         self.browser_frame.pack(expand=tk.YES, fill=tk.BOTH)
 
         # Pack MainFrame
@@ -77,10 +77,11 @@ class MainBrowserFrame(tk.Frame):
 
 class BrowserFrame(tk.Frame):
 
-    def __init__(self, master):
+    def __init__(self, master, file_path):
         self.closing = False
         self.browser = None
         tk.Frame.__init__(self, master)
+        self.file_path = file_path
         self.bind("<FocusIn>", self.on_focus_in)
         self.bind("<FocusOut>", self.on_focus_out)
         self.bind("<Configure>", self.on_configure)
@@ -91,7 +92,7 @@ class BrowserFrame(tk.Frame):
         rect = [0, 0, self.winfo_width(), self.winfo_height()]
         window_info.SetAsChild(self.get_window_handle(), rect)
         self.browser = cef.CreateBrowserSync(window_info,
-                                             url="file:///src/ex_load.html") #todo
+                                             url="file:///" + self.file_path)
         assert self.browser
         self.browser.SetClientHandler(FocusHandler(self))
         self.message_loop_work()

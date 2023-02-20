@@ -7,6 +7,7 @@ from math import isclose, inf
 import pandas as pd
 import datetime
 import plotly.express as px
+from plotly import offline
 
 from abc import ABC, abstractmethod
 
@@ -1271,7 +1272,7 @@ class SolutionVisualizer:
         return operatedPatients
 
 
-    def plot_graph(self, solution):
+    def plot_graph(self, solution, file_name):
         if(solution is None):
             print("No solution exists to be plotted!")
             return
@@ -1361,4 +1362,6 @@ class SolutionVisualizer:
         x=1
         ))
         fig.update_yaxes(categoryorder='category descending')
-        fig.show()
+        
+        # fig.show()
+        offline.plot(fig, filename="./src/ex_load_files/" + file_name + ".html", auto_open=False)

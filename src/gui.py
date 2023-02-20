@@ -12,7 +12,7 @@ from util import StdoutRedirector, DialogMode
 import pandas as pd
 from embedded_browser import MainBrowserFrame, cef
 import data
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class EntryWithLabel(ctk.CTkFrame):
@@ -791,8 +791,10 @@ class GUI(object):
         self.dialogs = []
         self.planning_number = 0
         self.tables = dict()
-        self.tables_dataframes = dict()
-        self.tables_edit_buttons = dict()
+        self.tables_dataframes = dict() # dict of length 2 lists: 0 -> patients list; 1 -> selected patients list
+        self.tables_edit_buttons = dict() # keep track of "Edit patient" buttons (which we may wat to enable/disable)
+        self.tables_switch_buttons = dict() # keep track of "Switch to planning" buttons (which we may wat to enable/disable)
+        self.interactive_planning_buttons = dict() # keep track of "Switch to planning" buttons (which we may wat to enable/disable)
 
         self.solver_gap = 0
         self.solver_time_limit = 600
@@ -829,8 +831,6 @@ class GUI(object):
         self.create_toolbar()
         self.create_summary_frame()
         self.create_notebook()
-
-        print(self.WELCOME_MESSAGE)
 
     def create_summary_entry(self, label_text, entry_text=""):
         return EntryWithLabel(master=self.summary_frame,
@@ -939,19 +939,9 @@ class GUI(object):
                                                                self.config_solver,
                                                                text="Impostazioni solver"
                                                                )
-        # self.run_button = self.create_toolbar_button("resources/run.png",
-        #                                              "resources/run_w.png",
-        #                                              self.launch_solver,
-        #                                              text="Calcola pianificazione"
-        #                                              )
-        # self.stop_button = self.create_toolbar_button("resources/stop.png",
-        #                                               "resources/stop_w.png",
-        #                                               self.stop_solver,
-        #                                               text="Interrompi pianificazione"
-        #                                               )
 
         self.theme_mode_switch = ctk.CTkSwitch(master=self.toolbar_frame,
-                                               text="Modalità notturna",
+                                               text="Tema scuro",
                                                font=self.SOURCE_SANS_PRO_SMALL,
                                                command=self.switch_theme_mode,
                                                progress_color=self.DARK_CRAYON_BLUE)
@@ -969,15 +959,13 @@ class GUI(object):
             ctk.set_appearance_mode("dark")
             for table in self.tables.values():
                 table.switch_theme("dark")
-            for table in self.planning_tables.values():
-                table.switch_theme("dark")
+            self.theme_mode_switch.configure(text="Tema chiaro")
         else:
             self.theme = "light"
             ctk.set_appearance_mode("light")
             for table in self.tables.values():
                 table.switch_theme("light")
-            for table in self.planning_tables.values():
-                table.switch_theme("light")
+            self.theme_mode_switch.configure(text="Tema scuro")
 
     def config_solver(self):
         dialog = self.SolverOptionsDialog(parent_view=self,
@@ -1027,12 +1015,7 @@ class GUI(object):
                                font=self.SOURCE_SANS_PRO_SMALL,
                                anchor=ctk.W
                                )
-        button.bind("<Enter>", command=self.hover_button, add="+")
-
         return button
-
-    def hover_button(self, event):
-        print(event.widget)
 
     def add_patient(self):
         self.InsertionDialog(parent_view=self,
@@ -1092,15 +1075,7 @@ class GUI(object):
             button.configure(text="Passa a lista pazienti", image=icon)
             label.configure(text="Pianificazione")
 
-            data_dict = {"Nome": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-                         "Cognome": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-                         "Sala": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-                         "Data operazione": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-                         "Orario inizio": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-                         "Ritardo": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
-                         "Anestesista": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"], }
-
-            new_data_frame = pd.DataFrame(data=data_dict)
+            new_data_frame = self.tables_dataframes[selected_tab][1]
 
         elif label.cget("text") == "Pianificazione":
             icon = ctk.CTkImage(Image.open("resources\\timetable.png"),
@@ -1113,7 +1088,7 @@ class GUI(object):
 
     def show_interactive_planning(self):
         gantt_toplevel = ctk.CTkToplevel()
-        main_browser_frame = MainBrowserFrame(gantt_toplevel)
+        main_browser_frame = MainBrowserFrame(gantt_toplevel, "src/ex_load_files/" + self.notebook.get() + ".html")
 
     def solve(self):
         pass
@@ -1151,10 +1126,47 @@ class GUI(object):
         solution = planner.extract_solution()
         if solution:
             sv = SolutionVisualizer()
-            sv.print_solution(solution)
-            sv.plot_graph(solution)
+            sv.plot_graph(solution, file_name=self.notebook.get())
 
         optimization_dialog.destroy()
+
+        planning_dataframe = {"Nome": [],
+                              "Cognome": [],
+                              "Sala": [],
+                              "Data operazione": [],
+                              "Orario inizio": [],
+                              "Ritardo": [],
+                              "Anestesista": []
+                              }
+
+        if solution:
+            for key in solution.keys():
+                for patient in solution[key]:
+                    planning_dataframe["Nome"].append(patient.id)
+                    planning_dataframe["Cognome"].append(patient.id)
+                    planning_dataframe["Sala"].append("S" + str(key[0]))
+
+                    today = datetime.now().weekday()
+                    days_to_monday = 7 - today
+                    next_monday = datetime.now() + timedelta(days=days_to_monday)
+                    target_date = next_monday + timedelta(days=key[1] - 1) # minus one since t = {1, 2, 3, 4, 5}
+                    planning_dataframe["Data operazione"].append(target_date.date()) 
+
+                    target_time = datetime(year=1970, month=1, day=1, hour=8, minute=0) + timedelta(minutes=patient.order)
+
+                    planning_dataframe["Orario inizio"].append(target_time.time())
+
+                    get_delay = lambda delay: "Sì" if delay else "No"
+                    planning_dataframe["Ritardo"].append(get_delay(patient.delay))
+
+                    get_anesthetist = lambda anesthetist: anesthetist if anesthetist > 0 else ""
+                    planning_dataframe["Anestesista"].append(get_anesthetist(patient.anesthetist))
+
+        current_tab_name = self.notebook.get()
+        self.tables_dataframes[current_tab_name][1] = pd.DataFrame(data=planning_dataframe)
+
+        self.tables_switch_buttons[current_tab_name].configure(state=ctk.NORMAL)
+        self.interactive_planning_buttons[current_tab_name].configure(state=ctk.NORMAL)
 
     def export_callback(self):
         selected_filetype = ctk.StringVar()
@@ -1281,9 +1293,11 @@ class GUI(object):
                       height=100)
 
         self.tables[tab_name] = table
-        self.tables_dataframes[tab_name] = (data_frame, None)
+        self.tables_dataframes[tab_name] = [data_frame, None]
 
         self.tables_edit_buttons[tab_name] = edit_patient_button
+        self.tables_switch_buttons[tab_name] = switch_view_button
+        self.interactive_planning_buttons[tab_name] = interactive_planning_button
 
         self.notebook.set(tab_name)
         self.update_patients_summary()
@@ -1502,7 +1516,6 @@ class GUI(object):
                                anchor=ctk.W,
                                width=170
                                )
-        button.bind("<Enter>", command=self.hover_button, add="+")
 
         return button
 
@@ -1512,8 +1525,6 @@ ctk.set_appearance_mode("light")
 root.title("Interventional Radiology Planner & Scheduler")
 root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(),
               root.winfo_screenheight()))
-print((root.winfo_screenwidth(),
-       root.winfo_screenheight()))
 root.state("zoomed")
 
 gui = GUI(root)

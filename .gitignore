@@ -131,3 +131,4 @@ dmypy.json
 # project's folders to ignore
 log/
 .vscode/launch.json
+/src/ex_load_files

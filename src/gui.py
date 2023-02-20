@@ -344,6 +344,48 @@ class GUI(object):
                                               label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                               measure_unit_suffix="(pz./sala)",
                                               var_type=ctk.IntVar)
+
+            self.operating_room_time_slider = SliderWithEntry(master=self.frame,
+                                              starting_value=0,
+                                              ending_value=480,
+                                              frame_color=self.frame_color_1,
+                                              entry_color=self.frame_color_1,
+                                              slider_color=self.parent_view.CRAYON_BLUE,
+                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                              label_text="Disponibilità sala operatoria",
+                                              label_color=self.labels_color,
+                                              label_text_color=self.labels_text_color,
+                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                              measure_unit_suffix="(min/giorno)",
+                                              var_type=ctk.IntVar)
+            
+            self.anesthetists_slider = SliderWithEntry(master=self.frame,
+                                              starting_value=0,
+                                              ending_value=5,
+                                              frame_color=self.frame_color_1,
+                                              entry_color=self.frame_color_1,
+                                              slider_color=self.parent_view.CRAYON_BLUE,
+                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                              label_text="Anestesisti disponibili",
+                                              label_color=self.labels_color,
+                                              label_text_color=self.labels_text_color,
+                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                              measure_unit_suffix="(al giorno)",
+                                              var_type=ctk.IntVar)
+            
+            self.anesthetists_time_slider = SliderWithEntry(master=self.frame,
+                                              starting_value=0,
+                                              ending_value=480,
+                                              frame_color=self.frame_color_1,
+                                              entry_color=self.frame_color_1,
+                                              slider_color=self.parent_view.CRAYON_BLUE,
+                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                              label_text="Disponibilità anestesista",
+                                              label_color=self.labels_color,
+                                              label_text_color=self.labels_text_color,
+                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                              measure_unit_suffix="(min/giorno)",
+                                              var_type=ctk.IntVar)
             
             self.confirm_button = ctk.CTkButton(master=self.dialog,
                                                 text="Salva",
@@ -354,21 +396,30 @@ class GUI(object):
                                                 command=self.save_solver_setup
                                                 )
 
-            self.frame.grid(padx=(20, 20), pady=(20, 20))
-            self.title_label.grid(row=0, column=0, padx=(10, 10), pady=(10, 0), sticky=ctk.W)
-            self.gap_slider.grid(row=1, column=0, padx=(10, 10), pady=(0, 0))
-            self.time_limit_slider.grid(row=2, column=0, padx=(10, 10), pady=(0, 0))
-            self.robustness_param_slider.grid(row=3, column=0, padx=(10, 10), pady=(0, 10))
-            self.confirm_button.grid(row=4, column=0, padx=(0, 20), pady=(0, 20), sticky=ctk.E)
+            self.frame.pack(side=ctk.TOP, padx=(20, 20), pady=(20, 20))
+            self.title_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(10, 10), pady=(10, 0))
+            self.gap_slider.pack(side=ctk.TOP, padx=(10, 10), pady=(0, 0))
+            self.time_limit_slider.pack(side=ctk.TOP, padx=(10, 10), pady=(0, 0))
+            self.robustness_param_slider.pack(side=ctk.TOP, padx=(10, 10), pady=(0, 0))
+            self.operating_room_time_slider.pack(side=ctk.TOP, padx=(10, 10), pady=(0, 0))
+            self.anesthetists_slider.pack(side=ctk.TOP, padx=(10, 10), pady=(0, 0))
+            self.anesthetists_time_slider.pack(side=ctk.TOP, padx=(10, 10), pady=(0, 10))
+            self.confirm_button.pack(side=ctk.TOP, anchor=ctk.E, padx=(0, 20), pady=(0, 20))
         
         def save_solver_setup(self):
             new_gap = self.gap_slider.slider_var.get()
             new_timelimit = self.time_limit_slider.slider_var.get()
             new_robustness_parameter = self.robustness_param_slider.slider_var.get()
+            new_operating_room_time = self.operating_room_time_slider.slider_var.get()
+            new_anesthetists = self.anesthetists_slider.slider_var.get()
+            new_anesthetists_time = self.anesthetists_time_slider.slider_var.get()
 
             self.parent_view.solver_gap = round(float(new_gap), 2)
             self.parent_view.solver_time_limit = int(new_timelimit)
             self.parent_view.solver_robustness_param = int(new_robustness_parameter)
+            self.parent_view.solver_operating_room_time = int(new_operating_room_time)
+            self.parent_view.solver_anesthetists = int(new_anesthetists)
+            self.parent_view.solver_anesthetists_time = int(new_anesthetists_time)
 
             self.parent_view.update_solver_summary()
 
@@ -746,6 +797,9 @@ class GUI(object):
         self.solver_gap = 0
         self.solver_time_limit = 600
         self.solver_robustness_param = 2
+        self.solver_anesthetists = 1
+        self.solver_anesthetists_time = 270
+        self.solver_operating_room_time = 270
 
         self.controller: Controller = None
 
@@ -798,25 +852,28 @@ class GUI(object):
     def pack_summary_frame(self):
         self.summary_frame.grid(row=0, column=2, sticky=ctk.NSEW, padx=(10, 10), pady=(18, 10))
 
-        self.summary_label.grid(row=0, column= 0, sticky=ctk.NW, padx=(20, 20), pady=(10, 0))
-        self.total_patients_summary_entry.grid(row=1, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
-        self.total_anesthesia_patients_summary_entry.grid(row=2, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
-        self.total_infectious_patients_summary_entry.grid(row=3, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(20, 20), pady=(10, 0))
+        self.total_patients_summary_entry.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.total_anesthesia_patients_summary_entry.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.total_infectious_patients_summary_entry.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
 
-        self.solver_summary_label.grid(row=4, column= 0, sticky=ctk.NW, padx=(20, 20), pady=(10, 0))
-        self.gap_summary_label.grid(row=5, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
-        self.time_limit_summary_label.grid(row=6, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
-        self.robustness_summary_label.grid(row=7, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.solver_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(20, 20), pady=(10, 0))
+        self.gap_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.time_limit_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.robustness_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.operating_room_time_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.anesthetists_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.anesthetists_time_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
 
-        self.solution_summary_label.grid(row=8, column= 0, sticky=ctk.NW, padx=(20, 20), pady=(10, 0))
-        self.selected_patients_label.grid(row=9, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
-        self.anesthesia_selected_patients_label.grid(row=10, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
-        self.infectious_selected_patients_label.grid(row=11, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
-        self.delayed_selected_patients_label.grid(row=12, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
-        self.average_OR1_utilization_label.grid(row=13, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
-        self.average_OR2_utilization_label.grid(row=14, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
-        self.average_OR3_utilization_label.grid(row=15, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
-        self.average_OR4_utilization_label.grid(row=16, column= 0, sticky=ctk.NSEW, padx=(30, 20), pady=(0, 0))
+        self.solution_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(20, 20), pady=(10, 0))
+        self.selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.anesthesia_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.infectious_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.delayed_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.average_OR1_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.average_OR2_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.average_OR3_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.average_OR4_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
 
 
     def create_summary_frame(self):
@@ -845,6 +902,9 @@ class GUI(object):
         self.gap_summary_label = self.create_summary_entry(label_text="Gap relativo tollerato: ", entry_text=str(self.solver_gap) + " (%)")
         self.time_limit_summary_label = self.create_summary_entry(label_text="Timeout: ", entry_text=str(self.solver_time_limit) + " (s)")
         self.robustness_summary_label = self.create_summary_entry(label_text="Parametro di robustezza: ", entry_text=str(self.solver_robustness_param) + " (pz./sala)")
+        self.operating_room_time_label = self.create_summary_entry(label_text="Disponibilità sala operatoria: ", entry_text=str(self.solver_operating_room_time) + " (min/giorno)")
+        self.anesthetists_label = self.create_summary_entry(label_text="Anestesisti disponibili: ", entry_text=str(self.solver_anesthetists) + " (per giorno)")
+        self.anesthetists_time_label = self.create_summary_entry(label_text="Disponibilità anestesista: ", entry_text=str(self.solver_anesthetists_time) + " (min/giorno)")
 
         self.solution_summary_label = ctk.CTkLabel(master=self.summary_frame,
                                                  fg_color=(self.THEME1_COLOR2,
@@ -1013,6 +1073,9 @@ class GUI(object):
         self.gap_summary_label.entry_variable.set(str(self.solver_gap) + " (%)")
         self.time_limit_summary_label.entry_variable.set(str(self.solver_time_limit) + " (s)")
         self.robustness_summary_label.entry_variable.set(str(self.solver_robustness_param) + " (pz./sala)")
+        self.operating_room_time_label.entry_variable.set(str(self.solver_operating_room_time) + " (min/giorno)")
+        self.anesthetists_label.entry_variable.set(str(self.solver_anesthetists) + " (al giorno)")
+        self.anesthetists_time_label.entry_variable.set(str(self.solver_anesthetists_time) + " (min/giorno)")
 
     def close_active_tab(self):
         active_tab = self.notebook.get()
@@ -1186,14 +1249,16 @@ class GUI(object):
                                                         "resources/timetable.png",
                                                         "resources/timetable_w.png",
                                                         # self.switch_view,
-                                                        text="Passa a pianificazione"
+                                                        text="Passa a pianificazione",
+                                                        state=ctk.DISABLED
                                                         )
 
         interactive_planning_button = self.create_tabview_button(table_lower_button_frame,
                                                                  "resources/gantt.png",
                                                                  "resources/gantt_w.png",
                                                                  self.show_interactive_planning,
-                                                                 text="Pianificazione interattiva"
+                                                                 text="Pianificazione interattiva",
+                                                                 state=ctk.DISABLED
                                                                  )
 
         patients_list_label = ctk.CTkLabel(master=table_lower_button_frame,
@@ -1349,8 +1414,7 @@ class GUI(object):
         specialties_number = 2
         operating_rooms = 4
         time_horizon = 5
-        anesthetists = 1
-        max_operating_room_time = 270
+        max_operating_room_time = self.solver_operating_room_time
 
         patient_ids = self.list_to_dict([i for i in range(1, patients + 1)])
         anesthesia_flags = self.list_to_dict(data_frame.loc[:,"Anestesia"])
@@ -1372,11 +1436,11 @@ class GUI(object):
                 'J': {None: specialties_number},
                 'K': {None: operating_rooms},
                 'T': {None: time_horizon},
-                'A': {None: anesthetists},
+                'A': {None: self.solver_anesthetists},
                 'M': {None: 7},
                 'Q': {None: 1},
-                's': self.generate_room_availability_table(operating_rooms, time_horizon, max_operating_room_time),
-                'An': self.generate_anesthetists_availability_table(anesthetists, time_horizon, max_operating_room_time),
+                's': self.generate_room_availability_table(operating_rooms, time_horizon, self.solver_operating_room_time),
+                'An': self.generate_anesthetists_availability_table(self.solver_anesthetists, time_horizon, self.solver_anesthetists_time),
                 'Gamma': robustness_parameters,
                 'tau': self.generate_room_specialty_mapping(specialties_number, operating_rooms, time_horizon),
                 'p': procedures_durations,

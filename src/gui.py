@@ -65,6 +65,7 @@ class EntryWithLabel(ctk.CTkFrame):
         self.label.destroy()
         super().destroy()
 
+
 class SliderWithEntry(ctk.CTkFrame):
     def __init__(self,
                  master,
@@ -85,8 +86,8 @@ class SliderWithEntry(ctk.CTkFrame):
                  var_type=ctk.DoubleVar,
                  **kwargs):
         super(SliderWithEntry, self).__init__(master=master,
-                                             fg_color=frame_color,
-                                             **kwargs)
+                                              fg_color=frame_color,
+                                              **kwargs)
         if not default_var_value:
             default_var_value = starting_value
 
@@ -130,16 +131,16 @@ class SliderWithEntry(ctk.CTkFrame):
         self.label.grid(row=0, column=0, sticky=ctk.W, padx=(10, 0), pady=(10, 0))
         self.slider.grid(row=1, column=0, padx=(10, 0), pady=(5, 5))
         self.entry.grid(row=1, column=1, padx=(10, 0), pady=(5, 5))
-        
+
     def update_entry(self, event):
         new_value = self.slider_var.get()
         if type(self.slider_var) is ctk.DoubleVar:
             new_value = round(new_value, 2)
-        
+
         self.entry_var.set(str(new_value) + self.measure_unit_suffix)
 
-class GUI(object):
 
+class GUI(object):
     # constants
     EXCEL_FILE = "File Excel"
     ODF_FILE = "ODF Spreadsheet (.odf)"
@@ -210,7 +211,7 @@ class GUI(object):
                   "69-40192": "69-40192",
                   "69-40191": "69-40191"
                   }
-    
+
     class Dialog():
 
         def __init__(self,
@@ -224,7 +225,6 @@ class GUI(object):
                      entries_color,
                      checkboxes_color,
                      checkmarks_color):
-            
             self.parent_view = parent_view
             self.frame_color_1 = frame_color_1
             self.frame_color_2 = frame_color_2
@@ -260,7 +260,7 @@ class GUI(object):
                              entries_color,
                              checkboxes_color,
                              checkmarks_color)
-            
+
             self.dialog.grab_set()
             progress_bar = ctk.CTkProgressBar(master=self.dialog, fg_color="gray90", progress_color=checkboxes_color, mode="indeterminate")
             progress_bar.pack()
@@ -268,7 +268,6 @@ class GUI(object):
 
         def destroy(self):
             self.dialog.destroy()
-
 
     class SolverOptionsDialog(Dialog):
 
@@ -283,7 +282,6 @@ class GUI(object):
                      entries_color,
                      checkboxes_color,
                      checkmarks_color):
-            
             super().__init__(parent_view,
                              frame_color_1,
                              frame_color_2,
@@ -294,16 +292,16 @@ class GUI(object):
                              entries_color,
                              checkboxes_color,
                              checkmarks_color)
-            
+
             self.dialog.grab_set()
             self.create_frame()
-            
-        def create_frame(self):
 
+        def create_frame(self):
             self.frame = ctk.CTkFrame(master=self.dialog, fg_color=self.frame_color_1, border_width=1, border_color="gray80")
 
-            self.title_label = ctk.CTkLabel(master=self.frame, text="Impostazioni solver", font=self.parent_view.SOURCE_SANS_PRO_MEDIUM, fg_color=self.labels_color, text_color=self.labels_text_color)
-            
+            self.title_label = ctk.CTkLabel(master=self.frame, text="Impostazioni solver", font=self.parent_view.SOURCE_SANS_PRO_MEDIUM,
+                                            fg_color=self.labels_color, text_color=self.labels_text_color)
+
             self.gap_slider = SliderWithEntry(master=self.frame,
                                               starting_value=0,
                                               ending_value=5,
@@ -316,77 +314,77 @@ class GUI(object):
                                               label_text_color=self.labels_text_color,
                                               label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                               measure_unit_suffix="(%)")
-            
+
             self.time_limit_slider = SliderWithEntry(master=self.frame,
-                                              starting_value=600,
-                                              ending_value=3600,
-                                              frame_color=self.frame_color_1,
-                                              entry_color=self.frame_color_1,
-                                              slider_color=self.parent_view.CRAYON_BLUE,
-                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
-                                              label_text="Tempo limite",
-                                              label_color=self.labels_color,
-                                              label_text_color=self.labels_text_color,
-                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
-                                              measure_unit_suffix="(s)",
-                                              var_type=ctk.IntVar)
+                                                     starting_value=600,
+                                                     ending_value=3600,
+                                                     frame_color=self.frame_color_1,
+                                                     entry_color=self.frame_color_1,
+                                                     slider_color=self.parent_view.CRAYON_BLUE,
+                                                     slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                                     label_text="Tempo limite",
+                                                     label_color=self.labels_color,
+                                                     label_text_color=self.labels_text_color,
+                                                     label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                                     measure_unit_suffix="(s)",
+                                                     var_type=ctk.IntVar)
 
             self.robustness_param_slider = SliderWithEntry(master=self.frame,
-                                              starting_value=0,
-                                              ending_value=10,
-                                              frame_color=self.frame_color_1,
-                                              entry_color=self.frame_color_1,
-                                              slider_color=self.parent_view.CRAYON_BLUE,
-                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
-                                              label_text="Parametro di robustezza",
-                                              label_color=self.labels_color,
-                                              label_text_color=self.labels_text_color,
-                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
-                                              measure_unit_suffix="(pz./sala)",
-                                              var_type=ctk.IntVar)
+                                                           starting_value=0,
+                                                           ending_value=10,
+                                                           frame_color=self.frame_color_1,
+                                                           entry_color=self.frame_color_1,
+                                                           slider_color=self.parent_view.CRAYON_BLUE,
+                                                           slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                                           label_text="Parametro di robustezza",
+                                                           label_color=self.labels_color,
+                                                           label_text_color=self.labels_text_color,
+                                                           label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                                           measure_unit_suffix="(pz./sala)",
+                                                           var_type=ctk.IntVar)
 
             self.operating_room_time_slider = SliderWithEntry(master=self.frame,
-                                              starting_value=0,
-                                              ending_value=480,
-                                              frame_color=self.frame_color_1,
-                                              entry_color=self.frame_color_1,
-                                              slider_color=self.parent_view.CRAYON_BLUE,
-                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
-                                              label_text="Disponibilità sala operatoria",
-                                              label_color=self.labels_color,
-                                              label_text_color=self.labels_text_color,
-                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
-                                              measure_unit_suffix="(min/giorno)",
-                                              var_type=ctk.IntVar)
-            
+                                                              starting_value=0,
+                                                              ending_value=480,
+                                                              frame_color=self.frame_color_1,
+                                                              entry_color=self.frame_color_1,
+                                                              slider_color=self.parent_view.CRAYON_BLUE,
+                                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                                              label_text="Disponibilità sala operatoria",
+                                                              label_color=self.labels_color,
+                                                              label_text_color=self.labels_text_color,
+                                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                                              measure_unit_suffix="(min/giorno)",
+                                                              var_type=ctk.IntVar)
+
             self.anesthetists_slider = SliderWithEntry(master=self.frame,
-                                              starting_value=0,
-                                              ending_value=5,
-                                              frame_color=self.frame_color_1,
-                                              entry_color=self.frame_color_1,
-                                              slider_color=self.parent_view.CRAYON_BLUE,
-                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
-                                              label_text="Anestesisti disponibili",
-                                              label_color=self.labels_color,
-                                              label_text_color=self.labels_text_color,
-                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
-                                              measure_unit_suffix="(al giorno)",
-                                              var_type=ctk.IntVar)
-            
+                                                       starting_value=0,
+                                                       ending_value=5,
+                                                       frame_color=self.frame_color_1,
+                                                       entry_color=self.frame_color_1,
+                                                       slider_color=self.parent_view.CRAYON_BLUE,
+                                                       slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                                       label_text="Anestesisti disponibili",
+                                                       label_color=self.labels_color,
+                                                       label_text_color=self.labels_text_color,
+                                                       label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                                       measure_unit_suffix="(al giorno)",
+                                                       var_type=ctk.IntVar)
+
             self.anesthetists_time_slider = SliderWithEntry(master=self.frame,
-                                              starting_value=0,
-                                              ending_value=480,
-                                              frame_color=self.frame_color_1,
-                                              entry_color=self.frame_color_1,
-                                              slider_color=self.parent_view.CRAYON_BLUE,
-                                              slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
-                                              label_text="Disponibilità anestesista",
-                                              label_color=self.labels_color,
-                                              label_text_color=self.labels_text_color,
-                                              label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
-                                              measure_unit_suffix="(min/giorno)",
-                                              var_type=ctk.IntVar)
-            
+                                                            starting_value=0,
+                                                            ending_value=480,
+                                                            frame_color=self.frame_color_1,
+                                                            entry_color=self.frame_color_1,
+                                                            slider_color=self.parent_view.CRAYON_BLUE,
+                                                            slider_hover_color=self.parent_view.DARK_CRAYON_BLUE,
+                                                            label_text="Disponibilità anestesista",
+                                                            label_color=self.labels_color,
+                                                            label_text_color=self.labels_text_color,
+                                                            label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
+                                                            measure_unit_suffix="(min/giorno)",
+                                                            var_type=ctk.IntVar)
+
             self.confirm_button = ctk.CTkButton(master=self.dialog,
                                                 text="Salva",
                                                 font=self.parent_view.SOURCE_SANS_PRO_SMALL,
@@ -405,7 +403,7 @@ class GUI(object):
             self.anesthetists_slider.pack(side=ctk.TOP, padx=(10, 10), pady=(0, 0))
             self.anesthetists_time_slider.pack(side=ctk.TOP, padx=(10, 10), pady=(0, 10))
             self.confirm_button.pack(side=ctk.TOP, anchor=ctk.E, padx=(0, 20), pady=(0, 20))
-        
+
         def save_solver_setup(self):
             new_gap = self.gap_slider.slider_var.get()
             new_timelimit = self.time_limit_slider.slider_var.get()
@@ -425,7 +423,6 @@ class GUI(object):
 
             self.dialog.destroy()
 
-
     class InsertionDialog(Dialog):
 
         def __init__(self,
@@ -440,7 +437,7 @@ class GUI(object):
                      checkboxes_color,
                      checkmarks_color,
                      mode=DialogMode.ADD):
-            
+
             super().__init__(parent_view,
                              frame_color_1,
                              frame_color_2,
@@ -569,16 +566,19 @@ class GUI(object):
         def bind_summary_interaction(self):
             self.name_entry.entry_variable.trace_add(mode="write",
                                                      callback=lambda *_,
-                                                     var=self.name_entry.entry_variable,
-                                                     summary_var=self.summary_name_entry.entry_variable: self.update_summary(var, summary_var))
+                                                                     var=self.name_entry.entry_variable,
+                                                                     summary_var=self.summary_name_entry.entry_variable: self.update_summary(var,
+                                                                                                                                             summary_var))
             self.surname_entry.entry_variable.trace_add(mode="write",
                                                         callback=lambda *_,
-                                                        var=self.surname_entry.entry_variable,
-                                                        summary_var=self.summary_surname_entry.entry_variable: self.update_summary(var, summary_var))
+                                                                        var=self.surname_entry.entry_variable,
+                                                                        summary_var=self.summary_surname_entry.entry_variable: self.update_summary(
+                                                            var, summary_var))
             self.waiting_list_date_entry.entry_variable.trace_add(mode="write",
                                                                   callback=lambda *_,
-                                                                  var=self.waiting_list_date_entry.entry_variable,
-                                                                  summary_var=self.summary_date_entry.entry_variable: self.update_summary(var, summary_var))
+                                                                                  var=self.waiting_list_date_entry.entry_variable,
+                                                                                  summary_var=self.summary_date_entry.entry_variable: self.update_summary(
+                                                                      var, summary_var))
 
         def update_summary(self, var, summary_var):
             summary_var.set(var.get())
@@ -602,15 +602,15 @@ class GUI(object):
         def create_summary_frame(self):
             self.summary_frame = ctk.CTkFrame(master=self.dialog,
                                               fg_color=self.frame_color_2)
-            
+
             self.summary_label = ctk.CTkLabel(master=self.summary_frame,
                                               fg_color=self.frame_color_2,
                                               # corner_radius=0,
                                               text="Riepilogo paziente",
                                               font=self.parent_view.SOURCE_SANS_PRO_MEDIUM_BOLD)
-            
+
             self.summary_entries_frame = ctk.CTkFrame(master=self.summary_frame,
-                                                                fg_color=self.frame_color_2)
+                                                      fg_color=self.frame_color_2)
 
             self.summary_name_entry = self.create_summary_entry("Nome: ")
             self.summary_surname_entry = self.create_summary_entry("Cognome: ")
@@ -673,7 +673,8 @@ class GUI(object):
 
             self.procedures_label_searchbox.entry_variable.trace_add(mode="write",
                                                                      callback=lambda *_,
-                                                                     var=self.procedures_label_searchbox.entry_variable: self.filter_procedures(var))
+                                                                                     var=self.procedures_label_searchbox.entry_variable: self.filter_procedures(
+                                                                         var))
 
             self.procedures_checkboxes_frame = ctk.CTkFrame(master=self.procedures_frame,
                                                             fg_color=self.frame_color_1,
@@ -732,6 +733,7 @@ class GUI(object):
                         procedure_checkbox.configure(bg_color="#BBF2D3")
                     else:
                         procedure_checkbox.configure(bg_color="transparent")
+
         def pack_procedure_checkboxes(self):
             for checkbox in self.procedure_checkboxes:
                 checkbox.pack(side=ctk.LEFT,
@@ -746,21 +748,22 @@ class GUI(object):
 
                 procedure_variable = self.procedure_variables[procedure[0]]
                 procedure_checkbox = ctk.CTkCheckBox(master=self.procedures_checkboxes_frame,
-                                                        variable=procedure_variable,
-                                                        border_color="gray80",
-                                                        border_width=1,
-                                                        hover=False,
-                                                        text=procedure[0],
-                                                        text_color=self.labels_text_color,
-                                                        font=self.elements_font,
-                                                        checkmark_color=self.checkmarks_color,
-                                                        fg_color=self.checkboxes_color,
-                                                        checkbox_height=15,
-                                                        checkbox_width=15,
-                                                        corner_radius=3,
-                                                        command=lambda *_,
-                                                        procedure_code=procedure[0],
-                                                        procedure_variable=procedure_variable: self.update_summary_procedures(procedure_code, procedure_variable))
+                                                     variable=procedure_variable,
+                                                     border_color="gray80",
+                                                     border_width=1,
+                                                     hover=False,
+                                                     text=procedure[0],
+                                                     text_color=self.labels_text_color,
+                                                     font=self.elements_font,
+                                                     checkmark_color=self.checkmarks_color,
+                                                     fg_color=self.checkboxes_color,
+                                                     checkbox_height=15,
+                                                     checkbox_width=15,
+                                                     corner_radius=3,
+                                                     command=lambda *_,
+                                                                    procedure_code=procedure[0],
+                                                                    procedure_variable=procedure_variable: self.update_summary_procedures(
+                                                         procedure_code, procedure_variable))
                 self.procedure_checkboxes.append(procedure_checkbox)
 
         def update_summary_procedures(self, procedure_code, procedure_variable):
@@ -791,12 +794,12 @@ class GUI(object):
         self.dialogs = []
         self.planning_number = 0
         self.tables = dict()
-        self.tables_dataframes = dict() # dict of length 2 lists: 0 -> patients list; 1 -> selected patients list
-        self.runs_statistics = dict() # dict 
+        self.tables_dataframes = dict()  # dict of length 2 lists: 0 -> patients list; 1 -> selected patients list
+        self.runs_statistics = dict()  # dict
 
-        self.tables_edit_buttons = dict() # keep track of "Edit patient" buttons (which we may wat to enable/disable)
-        self.tables_switch_buttons = dict() # keep track of "Switch to planning" buttons (which we may wat to enable/disable)
-        self.interactive_planning_buttons = dict() # keep track of "Switch to planning" buttons (which we may wat to enable/disable)
+        self.tables_edit_buttons = dict()  # keep track of "Edit patient" buttons (which we may wat to enable/disable)
+        self.tables_switch_buttons = dict()  # keep track of "Switch to planning" buttons (which we may wat to enable/disable)
+        self.interactive_planning_buttons = dict()  # keep track of "Switch to planning" buttons (which we may wat to enable/disable)
 
         self.solver_gap = 0
         self.solver_time_limit = 600
@@ -827,7 +830,7 @@ class GUI(object):
                                                     self.THEME2_COLOR2),
                                           corner_radius=0,
                                           width=self.toolbar_width)
-        
+
         self.toolbar_frame.grid(row=0, column=0, sticky=ctk.NSEW)
 
         self.create_toolbar()
@@ -877,7 +880,6 @@ class GUI(object):
         self.specialty_1_selected_ratio_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
         self.specialty_2_selected_ratio_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
 
-
     def create_summary_frame(self):
         self.summary_frame = ctk.CTkFrame(master=self.master,
                                           fg_color=(self.THEME1_COLOR2,
@@ -903,17 +905,21 @@ class GUI(object):
 
         self.gap_summary_label = self.create_summary_entry(label_text="Gap relativo tollerato: ", entry_text=str(self.solver_gap) + " (%)")
         self.time_limit_summary_label = self.create_summary_entry(label_text="Timeout: ", entry_text=str(self.solver_time_limit) + " (s)")
-        self.robustness_summary_label = self.create_summary_entry(label_text="Parametro di robustezza: ", entry_text=str(self.solver_robustness_param) + " (pz./sala)")
-        self.operating_room_time_label = self.create_summary_entry(label_text="Disponibilità sala operatoria: ", entry_text=str(self.solver_operating_room_time) + " (min/giorno)")
-        self.anesthetists_label = self.create_summary_entry(label_text="Anestesisti disponibili: ", entry_text=str(self.solver_anesthetists) + " (per giorno)")
-        self.anesthetists_time_label = self.create_summary_entry(label_text="Disponibilità anestesista: ", entry_text=str(self.solver_anesthetists_time) + " (min/giorno)")
+        self.robustness_summary_label = self.create_summary_entry(label_text="Parametro di robustezza: ",
+                                                                  entry_text=str(self.solver_robustness_param) + " (pz./sala)")
+        self.operating_room_time_label = self.create_summary_entry(label_text="Disponibilità sala operatoria: ",
+                                                                   entry_text=str(self.solver_operating_room_time) + " (min/giorno)")
+        self.anesthetists_label = self.create_summary_entry(label_text="Anestesisti disponibili: ",
+                                                            entry_text=str(self.solver_anesthetists) + " (per giorno)")
+        self.anesthetists_time_label = self.create_summary_entry(label_text="Disponibilità anestesista: ",
+                                                                 entry_text=str(self.solver_anesthetists_time) + " (min/giorno)")
 
         self.solution_summary_label = ctk.CTkLabel(master=self.summary_frame,
-                                                 fg_color=(self.THEME1_COLOR2,
-                                                           self.THEME2_COLOR2),
-                                                 text="Riepilogo soluzione",
-                                                 font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
-        
+                                                   fg_color=(self.THEME1_COLOR2,
+                                                             self.THEME2_COLOR2),
+                                                   text="Riepilogo soluzione",
+                                                   font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
+
         self.selected_patients_label = self.create_summary_entry(label_text="Pazienti selezionati: ")
         self.anesthesia_selected_patients_label = self.create_summary_entry(label_text="Pazienti con anestesia selezionati: ")
         self.infectious_selected_patients_label = self.create_summary_entry(label_text="Pazienti con infezioni selezionati: ")
@@ -1053,7 +1059,7 @@ class GUI(object):
                                       checkmarks_color=self.WHITE,
                                       checkboxes_color=self.CRAYON_BLUE,
                                       mode=DialogMode.EDIT)
-        
+
     def update_solver_summary(self):
         self.gap_summary_label.entry_variable.set(str(self.solver_gap) + " (%)")
         self.time_limit_summary_label.entry_variable.set(str(self.solver_time_limit) + " (s)")
@@ -1107,21 +1113,21 @@ class GUI(object):
     def launch_optimization(self):
         parameter_dict = self.initialize_data_from_table()
         optimization_dialog = self.OptimizationProgressDialog(parent_view=self,
-                                          frame_color_1=(self.WHITE,
-                                                         self.THEME2_COLOR2),
-                                          frame_color_2=(self.THEME1_COLOR1,
-                                                         self.THEME2_COLOR1),
-                                          section_font=self.SOURCE_SANS_PRO_MEDIUM,
-                                          elements_font=self.SOURCE_SANS_PRO_SMALL,
-                                          labels_color=(self.WHITE,
-                                                        self.THEME2_COLOR2),
-                                          labels_text_color=(self.BLACK,
-                                                             self.WHITE),
-                                          entries_color=(self.THEME1_COLOR1,
-                                                         self.THEME2_COLOR1),
-                                          checkmarks_color=self.WHITE,
-                                          checkboxes_color=self.CRAYON_BLUE)
-        
+                                                              frame_color_1=(self.WHITE,
+                                                                             self.THEME2_COLOR2),
+                                                              frame_color_2=(self.THEME1_COLOR1,
+                                                                             self.THEME2_COLOR1),
+                                                              section_font=self.SOURCE_SANS_PRO_MEDIUM,
+                                                              elements_font=self.SOURCE_SANS_PRO_SMALL,
+                                                              labels_color=(self.WHITE,
+                                                                            self.THEME2_COLOR2),
+                                                              labels_text_color=(self.BLACK,
+                                                                                 self.WHITE),
+                                                              entries_color=(self.THEME1_COLOR1,
+                                                                             self.THEME2_COLOR1),
+                                                              checkmarks_color=self.WHITE,
+                                                              checkboxes_color=self.CRAYON_BLUE)
+
         planner = HeuristicLBBDPlanner(timeLimit=self.solver_time_limit, gap=self.solver_gap, iterations_cap=10, solver="cbc")
         planner.solve_model(parameter_dict)
         run_info = planner.extract_run_info()
@@ -1151,8 +1157,8 @@ class GUI(object):
                     today = datetime.now().weekday()
                     days_to_monday = 7 - today
                     next_monday = datetime.now() + timedelta(days=days_to_monday)
-                    target_date = next_monday + timedelta(days=key[1] - 1) # minus one since t = {1, 2, 3, 4, 5}
-                    planning_dataframe["Data operazione"].append(target_date.date()) 
+                    target_date = next_monday + timedelta(days=key[1] - 1)  # minus one since t = {1, 2, 3, 4, 5}
+                    planning_dataframe["Data operazione"].append(target_date.date())
 
                     target_time = datetime(year=1970, month=1, day=1, hour=8, minute=0) + timedelta(minutes=patient.order)
 
@@ -1200,7 +1206,7 @@ class GUI(object):
                                        # width=self.notebook_width,
                                        # height=400,
                                        command=self.update_patients_summary)
-        
+
         self.notebook.grid(row=0, column=1, sticky=ctk.NSEW, padx=(10, 0), pady=(0, 10))
 
     def on_row_interaction(self, event):
@@ -1234,7 +1240,7 @@ class GUI(object):
                                                          command=self.export_callback,
                                                          text="Esporta in file Excel"
                                                          )
-        
+
         launch_optimization = self.create_tabview_button(table_upper_button_frame,
                                                          "resources/run.png",
                                                          "resources/run_w.png",
@@ -1281,7 +1287,7 @@ class GUI(object):
                                            font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
 
         switch_view_button.configure(command=lambda button=switch_view_button,
-                                     label=patients_list_label: self.switch_view(button, label))
+                                                    label=patients_list_label: self.switch_view(button, label))
 
         table = Table(master=tab,
                       on_select_command=self.on_row_interaction,
@@ -1341,15 +1347,15 @@ class GUI(object):
     def list_to_dict(self, list):
         items = len(list)
         return {key: value for (key, value) in zip([i for i in range(1, items + 1)], list)}
-    
+
     # we assume the same timespan for each room, on each day
     def generate_room_availability_table(self, operating_rooms, time_horizon, operating_room_time):
         return {(k, t): operating_room_time for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
-    
+
     # we assume same availability for each anesthetist
     def generate_anesthetists_availability_table(self, anesthetists, time_horizon, anesthetists_availability):
         return {(a, t): anesthetists_availability for a in range(1, anesthetists + 1) for t in range(1, time_horizon + 1)}
-    
+
     def generate_room_specialty_mapping(self, specialties, operating_rooms, time_horizon):
         table = {(j, k, t): 0 for j in range(1, specialties + 1) for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
         for key in table.keys():
@@ -1358,28 +1364,28 @@ class GUI(object):
             if key[0] == 2 and (key[1] in [3, 4]):
                 table[key] = 1
         return table
-    
+
     def generate_procedures_durations(self, procedures):
         procedures_durations = {}
         for item in procedures.items():
-            services = item[1] # is a string of the form "69-8847|69-88495"
+            services = item[1]  # is a string of the form "69-8847|69-88495"
             services_key = frozenset(services.split("|"))
             procedures_durations[item[0]] = data.surgery_room_occupancy_mapping[services_key]
 
         return procedures_durations
-    
+
     def generate_procedures_delays(self, origin_wards):
         procedures_delays = {}
         for item in origin_wards.items():
-            origin_ward = item[1] # is a string, for now. Better translate such strings to some code
+            origin_ward = item[1]  # is a string, for now. Better translate such strings to some code
             procedures_delays[(1, item[0])] = data.ward_arrival_delay_mapping[origin_ward]
 
         return procedures_delays
-    
+
     def compute_precedences(self, procedures, infection_flags):
         precedences = {}
         for item in procedures.items():
-            services = item[1] # is a string of the form "69-8847|69-88495"
+            services = item[1]  # is a string of the form "69-8847|69-88495"
             services_key = frozenset(services.split("|"))
             if data.dirty_surgery_mapping[services_key] == 0 and infection_flags[item[0]] == 0:
                 precedences[item[0]] = 1
@@ -1388,10 +1394,10 @@ class GUI(object):
             if data.dirty_surgery_mapping[services_key] == 0 and infection_flags[item[0]] == 1:
                 precedences[item[0]] = 5
             if data.dirty_surgery_mapping[services_key] == 1 and infection_flags[item[0]] == 1:
-                precedences[item[0]] = 5 # for now...
-        
+                precedences[item[0]] = 5  # for now...
+
         return precedences
-    
+
     def compute_u_parameters(self, patients, precedences):
         u = {}
         for i1 in range(1, patients + 1):
@@ -1406,13 +1412,13 @@ class GUI(object):
                 if precedences[i2] < precedences[i1]:
                     u[(i2, i1)] = 1
         return u
-    
+
     # compute priorities (r_i) with respect to planning day
-    def compute_priorities(self, waiting_list_insertion_dates, MTBTs):
+    def compute_priorities(self, waiting_list_insertion_dates, mtbt_list):
         today = pd.Timestamp(datetime.now())
         priorities = []
 
-        for (insertion_date, mtbt) in zip(waiting_list_insertion_dates.values(), MTBTs.values()):
+        for (insertion_date, mtbt) in zip(waiting_list_insertion_dates.values(), mtbt_list.values()):
             delta = (today - insertion_date).days
             priorities.append(100 * delta / mtbt)
 
@@ -1434,14 +1440,14 @@ class GUI(object):
         max_operating_room_time = self.solver_operating_room_time
 
         patient_ids = self.list_to_dict([i for i in range(1, patients + 1)])
-        anesthesia_flags = self.list_to_dict(data_frame.loc[:,"Anestesia"])
-        infection_flags = self.list_to_dict(data_frame.loc[:,"Infezioni"])
-        specialties = self.list_to_dict(data_frame.loc[:,"Specialità richiesta"])
-        origin_wards = self.list_to_dict(data_frame.loc[:,"Reparto di provenienza"])
-        procedures = self.list_to_dict(data_frame.loc[:,"Prestazioni"])
-        waiting_list_insertion_dates = self.list_to_dict(data_frame.loc[:,"Data inserimento in lista"])
-        MTBTs = self.list_to_dict(data_frame.loc[:,"MTBT (giorni)"])
-        priorities = self.compute_priorities(waiting_list_insertion_dates, MTBTs)
+        anesthesia_flags = self.list_to_dict(data_frame.loc[:, "Anestesia"])
+        infection_flags = self.list_to_dict(data_frame.loc[:, "Infezioni"])
+        specialties = self.list_to_dict(data_frame.loc[:, "Specialità richiesta"])
+        origin_wards = self.list_to_dict(data_frame.loc[:, "Reparto di provenienza"])
+        procedures = self.list_to_dict(data_frame.loc[:, "Prestazioni"])
+        waiting_list_insertion_dates = self.list_to_dict(data_frame.loc[:, "Data inserimento in lista"])
+        mtbt_list = self.list_to_dict(data_frame.loc[:, "MTBT (giorni)"])
+        priorities = self.compute_priorities(waiting_list_insertion_dates, mtbt_list)
         procedures_durations = self.generate_procedures_durations(procedures)
         procedures_delays = self.generate_procedures_delays(origin_wards)
         precedences = self.compute_precedences(procedures, infection_flags)
@@ -1470,7 +1476,7 @@ class GUI(object):
                 'specialty': specialties,
                 'precedence': precedences,
                 'bigM': {
-                    1: floor(max_operating_room_time/min([operating_time for operating_time in procedures_durations.values()])),
+                    1: floor(max_operating_room_time / min([operating_time for operating_time in procedures_durations.values()])),
                     2: max_operating_room_time,
                     3: max_operating_room_time,
                     4: max_operating_room_time,
@@ -1495,7 +1501,8 @@ class GUI(object):
         planning_dataframe = self.tables_dataframes[current_tab_name][1]
 
         if planning_dataframe is not None:
-            self.selected_patients_label.entry_variable.set(str(len(planning_dataframe)) + "(" + str(round(len(planning_dataframe) / len(current_data_frame), 2)) + "%)")
+            self.selected_patients_label.entry_variable.set(
+                str(len(planning_dataframe)) + "(" + str(round(len(planning_dataframe) / len(current_data_frame), 2)) + "%)")
             anesthesia_selected_patients = len(planning_dataframe.query("Anestesista != ''"))
 
             run_info = self.runs_statistics[current_tab_name]
@@ -1539,7 +1546,7 @@ root = ctk.CTk()
 ctk.set_appearance_mode("light")
 root.title("Interventional Radiology Planner & Scheduler")
 root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(),
-              root.winfo_screenheight()))
+                                   root.winfo_screenheight()))
 root.state("zoomed")
 
 gui = GUI(root)

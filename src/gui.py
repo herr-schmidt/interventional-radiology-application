@@ -792,6 +792,8 @@ class GUI(object):
         self.planning_number = 0
         self.tables = dict()
         self.tables_dataframes = dict() # dict of length 2 lists: 0 -> patients list; 1 -> selected patients list
+        self.runs_statistics = dict() # dict 
+
         self.tables_edit_buttons = dict() # keep track of "Edit patient" buttons (which we may wat to enable/disable)
         self.tables_switch_buttons = dict() # keep track of "Switch to planning" buttons (which we may wat to enable/disable)
         self.interactive_planning_buttons = dict() # keep track of "Switch to planning" buttons (which we may wat to enable/disable)
@@ -870,10 +872,10 @@ class GUI(object):
         self.anesthesia_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
         self.infectious_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
         self.delayed_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.average_OR1_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.average_OR2_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.average_OR3_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.average_OR4_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.average_OR1_OR2_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.average_OR3_OR4_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.specialty_1_selected_ratio_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.specialty_2_selected_ratio_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
 
 
     def create_summary_frame(self):
@@ -916,10 +918,10 @@ class GUI(object):
         self.anesthesia_selected_patients_label = self.create_summary_entry(label_text="Pazienti con anestesia selezionati: ")
         self.infectious_selected_patients_label = self.create_summary_entry(label_text="Pazienti con infezioni selezionati: ")
         self.delayed_selected_patients_label = self.create_summary_entry(label_text="Pazienti stimati in ritardo: ")
-        self.average_OR1_utilization_label = self.create_summary_entry(label_text="Utilizzazione media Sala 1: ")
-        self.average_OR2_utilization_label = self.create_summary_entry(label_text="Utilizzazione media Sala 2: ")
-        self.average_OR3_utilization_label = self.create_summary_entry(label_text="Utilizzazione media Sala 3: ")
-        self.average_OR4_utilization_label = self.create_summary_entry(label_text="Utilizzazione media Sala 4: ")
+        self.average_OR1_OR2_utilization_label = self.create_summary_entry(label_text="Utilizzazione media Sale 1 e 2: ")
+        self.average_OR3_OR4_utilization_label = self.create_summary_entry(label_text="Utilizzazione media Sale 3 e 4: ")
+        self.specialty_1_selected_ratio_label = self.create_summary_entry(label_text="Pazienti di R.I. vascolare selezionati: ")
+        self.specialty_2_selected_ratio_label = self.create_summary_entry(label_text="Pazienti di radiodiagnostica selezionati: ")
 
         self.pack_summary_frame()
 
@@ -1159,11 +1161,12 @@ class GUI(object):
                     get_delay = lambda delay: "Sì" if delay else "No"
                     planning_dataframe["Ritardo"].append(get_delay(patient.delay))
 
-                    get_anesthetist = lambda anesthetist: anesthetist if anesthetist > 0 else ""
+                    get_anesthetist = lambda anesthetist: "A" + str(anesthetist) if anesthetist > 0 else ""
                     planning_dataframe["Anestesista"].append(get_anesthetist(patient.anesthetist))
 
         current_tab_name = self.notebook.get()
         self.tables_dataframes[current_tab_name][1] = pd.DataFrame(data=planning_dataframe)
+        self.runs_statistics[current_tab_name] = run_info
 
         self.tables_switch_buttons[current_tab_name].configure(state=ctk.NORMAL)
         self.interactive_planning_buttons[current_tab_name].configure(state=ctk.NORMAL)
@@ -1488,6 +1491,18 @@ class GUI(object):
         self.total_patients_summary_entry.entry_variable.set(str(total_patients))
         self.total_anesthesia_patients_summary_entry.entry_variable.set(str(anesthesia_patients))
         self.total_infectious_patients_summary_entry.entry_variable.set(str(infectious_patients))
+
+        planning_dataframe = self.tables_dataframes[current_tab_name][1]
+
+        if planning_dataframe is not None:
+            self.selected_patients_label.entry_variable.set(str(len(planning_dataframe)) + "(" + str(round(len(planning_dataframe) / len(current_data_frame), 2)) + "%)")
+            anesthesia_selected_patients = len(planning_dataframe.query("Anestesista != ''"))
+
+            run_info = self.runs_statistics[current_tab_name]
+            self.average_OR1_OR2_utilization_label.entry_variable.set(str(round(run_info["specialty_1_OR_utilization"] * 100, 2)) + "%")
+            self.average_OR3_OR4_utilization_label.entry_variable.set(str(round(run_info["specialty_2_OR_utilization"] * 100, 2)) + "%")
+            self.specialty_1_selected_ratio_label.entry_variable.set(str(round(run_info["specialty_1_selection_ratio"] * 100, 2)) + "%")
+            self.specialty_2_selected_ratio_label.entry_variable.set(str(round(run_info["specialty_2_selection_ratio"] * 100, 2)) + "%")
 
     def create_tabview_button(self,
                               table_button_frame,

@@ -1150,7 +1150,8 @@ class GUI(object):
                               "Data operazione": [],
                               "Orario inizio": [],
                               "Ritardo": [],
-                              "Anestesista": []
+                              "Anestesista": [],
+                              "Infezioni": []
                               }
 
         if solution:
@@ -1175,6 +1176,9 @@ class GUI(object):
 
                     def get_anesthetist(anesthetist): return "A" + str(anesthetist) if anesthetist > 0 else ""
                     planning_dataframe["Anestesista"].append(get_anesthetist(patient.anesthetist))
+
+                    def get_infection_info(infection): return "Sì" if infection else "No"
+                    planning_dataframe["Infezioni"].append(get_infection_info(patient.infection))
 
         current_tab_name = self.notebook.get()
         self.tables_dataframes[current_tab_name][1] = pd.DataFrame(data=planning_dataframe)
@@ -1519,20 +1523,40 @@ class GUI(object):
 
         planning_dataframe = self.tables_dataframes[current_tab_name][1]
 
+        selected_patients = "N/A"
+        anesthesia_selected_patients = "N/A"
+        infectious_selected_patients = "N/A"
+        delayed_selected_patients = "N/A"
+        average_OR1_OR2_utilization = "N/A"
+        average_OR3_OR4_utilization = "N/A"
+        specialty_1_selected_ratio = "N/A"
+        specialty_2_selected_ratio = "N/A"
+
         if planning_dataframe is not None:
-            self.selected_patients_label.entry_variable.set(str(len(planning_dataframe))
-                                                            + " ("
-                                                            + str(round(len(planning_dataframe) / len(current_data_frame) * 100, 2))
-                                                            + "%)")
+            selected_patients = (str(len(planning_dataframe))
+                                + " ("
+                                + str(round(len(planning_dataframe) / len(current_data_frame) * 100, 2))
+                                + "%)"
+                                )
             
-            anesthesia_selected_patients = len(planning_dataframe.query("Anestesista != ''"))
+            anesthesia_selected_patients = str(len(planning_dataframe.query("Anestesista != ''")))
+            infectious_selected_patients = str(len(planning_dataframe.query("Infezioni == 'Sì'")))
+            delayed_selected_patients = str(len(planning_dataframe.query("Ritardo == 'Sì'")))
 
             run_info = self.runs_statistics[current_tab_name]
-            self.anesthesia_selected_patients_label.entry_variable.set(str(anesthesia_selected_patients))
-            self.average_OR1_OR2_utilization_label.entry_variable.set(str(round(run_info["specialty_1_OR_utilization"] * 100, 2)) + "%")
-            self.average_OR3_OR4_utilization_label.entry_variable.set(str(round(run_info["specialty_2_OR_utilization"] * 100, 2)) + "%")
-            self.specialty_1_selected_ratio_label.entry_variable.set(str(round(run_info["specialty_1_selection_ratio"] * 100, 2)) + "%")
-            self.specialty_2_selected_ratio_label.entry_variable.set(str(round(run_info["specialty_2_selection_ratio"] * 100, 2)) + "%")
+            average_OR1_OR2_utilization = str(round(run_info["specialty_1_OR_utilization"] * 100, 2)) + "%"
+            average_OR3_OR4_utilization = str(round(run_info["specialty_2_OR_utilization"] * 100, 2)) + "%"
+            specialty_1_selected_ratio = str(round(run_info["specialty_1_selection_ratio"] * 100, 2)) + "%"
+            specialty_2_selected_ratio = str(round(run_info["specialty_2_selection_ratio"] * 100, 2)) + "%"
+
+        self.selected_patients_label.entry_variable.set(selected_patients)
+        self.anesthesia_selected_patients_label.entry_variable.set(anesthesia_selected_patients)
+        self.infectious_selected_patients_label.entry_variable.set(infectious_selected_patients)
+        self.delayed_selected_patients_label.entry_variable.set(delayed_selected_patients)
+        self.average_OR1_OR2_utilization_label.entry_variable.set(average_OR1_OR2_utilization)
+        self.average_OR3_OR4_utilization_label.entry_variable.set(average_OR3_OR4_utilization)
+        self.specialty_1_selected_ratio_label.entry_variable.set(specialty_1_selected_ratio)
+        self.specialty_2_selected_ratio_label.entry_variable.set(specialty_2_selected_ratio)
 
     def create_tabview_button(self,
                               table_button_frame,

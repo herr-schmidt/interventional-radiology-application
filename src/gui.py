@@ -13,6 +13,8 @@ import pandas as pd
 from embedded_browser import MainBrowserFrame, cef
 import data
 from datetime import datetime, timedelta
+from threading import Thread
+from queue import Queue
 
 
 class EntryWithLabel(ctk.CTkFrame):
@@ -262,9 +264,11 @@ class GUI(object):
                              checkmarks_color)
 
             self.dialog.grab_set()
-            progress_bar = ctk.CTkProgressBar(master=self.dialog, fg_color="gray90", progress_color=checkboxes_color, mode="indeterminate")
-            progress_bar.pack()
-            progress_bar.start()
+            self.progress_label = ctk.CTkLabel(master=self.dialog, fg_color=labels_color, text="Ottimizzazione in corso...", text_color=labels_text_color)
+            self.progress_bar = ctk.CTkProgressBar(master=self.dialog, fg_color="gray90", progress_color=checkboxes_color, mode="indeterminate")
+            self.progress_label.pack(side=ctk.TOP, padx=(40, 40), pady=(40, 10))
+            self.progress_bar.pack(side=ctk.TOP, padx=(40, 40), pady=(10, 40))
+            self.progress_bar.start()
 
         def destroy(self):
             self.dialog.destroy()
@@ -566,18 +570,18 @@ class GUI(object):
         def bind_summary_interaction(self):
             self.name_entry.entry_variable.trace_add(mode="write",
                                                      callback=lambda *_,
-                                                                     var=self.name_entry.entry_variable,
-                                                                     summary_var=self.summary_name_entry.entry_variable: self.update_summary(var,
-                                                                                                                                             summary_var))
+                                                     var=self.name_entry.entry_variable,
+                                                     summary_var=self.summary_name_entry.entry_variable: self.update_summary(var,
+                                                                                                                             summary_var))
             self.surname_entry.entry_variable.trace_add(mode="write",
                                                         callback=lambda *_,
-                                                                        var=self.surname_entry.entry_variable,
-                                                                        summary_var=self.summary_surname_entry.entry_variable: self.update_summary(
+                                                        var=self.surname_entry.entry_variable,
+                                                        summary_var=self.summary_surname_entry.entry_variable: self.update_summary(
                                                             var, summary_var))
             self.waiting_list_date_entry.entry_variable.trace_add(mode="write",
                                                                   callback=lambda *_,
-                                                                                  var=self.waiting_list_date_entry.entry_variable,
-                                                                                  summary_var=self.summary_date_entry.entry_variable: self.update_summary(
+                                                                  var=self.waiting_list_date_entry.entry_variable,
+                                                                  summary_var=self.summary_date_entry.entry_variable: self.update_summary(
                                                                       var, summary_var))
 
         def update_summary(self, var, summary_var):
@@ -673,7 +677,7 @@ class GUI(object):
 
             self.procedures_label_searchbox.entry_variable.trace_add(mode="write",
                                                                      callback=lambda *_,
-                                                                                     var=self.procedures_label_searchbox.entry_variable: self.filter_procedures(
+                                                                     var=self.procedures_label_searchbox.entry_variable: self.filter_procedures(
                                                                          var))
 
             self.procedures_checkboxes_frame = ctk.CTkFrame(master=self.procedures_frame,
@@ -761,8 +765,8 @@ class GUI(object):
                                                      checkbox_width=15,
                                                      corner_radius=3,
                                                      command=lambda *_,
-                                                                    procedure_code=procedure[0],
-                                                                    procedure_variable=procedure_variable: self.update_summary_procedures(
+                                                     procedure_code=procedure[0],
+                                                     procedure_variable=procedure_variable: self.update_summary_procedures(
                                                          procedure_code, procedure_variable))
                 self.procedure_checkboxes.append(procedure_checkbox)
 
@@ -809,6 +813,8 @@ class GUI(object):
         self.solver_operating_room_time = 270
 
         self.controller: Controller = None
+
+        self.optimization_results_queue = Queue()
 
         self.initializeUI()
 
@@ -992,12 +998,6 @@ class GUI(object):
                                           checkmarks_color=self.WHITE,
                                           checkboxes_color=self.CRAYON_BLUE)
 
-    def launch_solver(self):
-        pass
-
-    def stop_solver(self):
-        pass
-
     def create_toolbar_button(self,
                               theme1_icon_path,
                               theme2_icon_path,
@@ -1111,8 +1111,7 @@ class GUI(object):
         controller.import_sheet(selected_file=selected_file)
 
     def launch_optimization(self):
-        parameter_dict = self.initialize_data_from_table()
-        optimization_dialog = self.OptimizationProgressDialog(parent_view=self,
+        self.optimization_dialog = self.OptimizationProgressDialog(parent_view=self,
                                                               frame_color_1=(self.WHITE,
                                                                              self.THEME2_COLOR2),
                                                               frame_color_2=(self.THEME1_COLOR1,
@@ -1128,15 +1127,22 @@ class GUI(object):
                                                               checkmarks_color=self.WHITE,
                                                               checkboxes_color=self.CRAYON_BLUE)
 
-        planner = HeuristicLBBDPlanner(timeLimit=self.solver_time_limit, gap=self.solver_gap, iterations_cap=10, solver="cbc")
-        planner.solve_model(parameter_dict)
-        run_info = planner.extract_run_info()
-        solution = planner.extract_solution()
+        optimization_thread = Thread(target=self.compute_solution, args=(self.optimization_results_queue, ))
+        self.update_view_with_solution()
+        optimization_thread.start()
+
+    def update_view_with_solution(self):
+        if self.optimization_results_queue.empty():
+            self.master.after(ms=1000, func=self.update_view_with_solution)
+            return
+
+        result = self.optimization_results_queue.get()
+        solution = result[0]
+        run_info = result[1]
+
         if solution:
             sv = SolutionVisualizer()
             sv.plot_graph(solution, file_name=self.notebook.get())
-
-        optimization_dialog.destroy()
 
         planning_dataframe = {"Nome": [],
                               "Cognome": [],
@@ -1164,18 +1170,31 @@ class GUI(object):
 
                     planning_dataframe["Orario inizio"].append(target_time.time())
 
-                    get_delay = lambda delay: "Sì" if delay else "No"
+                    def get_delay(delay): return "Sì" if delay else "No"
                     planning_dataframe["Ritardo"].append(get_delay(patient.delay))
 
-                    get_anesthetist = lambda anesthetist: "A" + str(anesthetist) if anesthetist > 0 else ""
+                    def get_anesthetist(anesthetist): return "A" + str(anesthetist) if anesthetist > 0 else ""
                     planning_dataframe["Anestesista"].append(get_anesthetist(patient.anesthetist))
 
         current_tab_name = self.notebook.get()
         self.tables_dataframes[current_tab_name][1] = pd.DataFrame(data=planning_dataframe)
         self.runs_statistics[current_tab_name] = run_info
 
+        self.optimization_dialog.destroy()
+
         self.tables_switch_buttons[current_tab_name].configure(state=ctk.NORMAL)
         self.interactive_planning_buttons[current_tab_name].configure(state=ctk.NORMAL)
+
+        self.update_patients_summary()
+
+    def compute_solution(self, optimization_results_queue: Queue):
+        parameter_dict = self.initialize_data_from_table()
+        planner = HeuristicLBBDPlanner(timeLimit=self.solver_time_limit, gap=self.solver_gap, iterations_cap=10, solver="cplex")
+        planner.solve_model(parameter_dict)
+        run_info = planner.extract_run_info()
+        solution = planner.extract_solution()
+
+        optimization_results_queue.put((solution, run_info))
 
     def export_callback(self):
         selected_filetype = ctk.StringVar()
@@ -1287,7 +1306,7 @@ class GUI(object):
                                            font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
 
         switch_view_button.configure(command=lambda button=switch_view_button,
-                                                    label=patients_list_label: self.switch_view(button, label))
+                                     label=patients_list_label: self.switch_view(button, label))
 
         table = Table(master=tab,
                       on_select_command=self.on_row_interaction,
@@ -1501,11 +1520,15 @@ class GUI(object):
         planning_dataframe = self.tables_dataframes[current_tab_name][1]
 
         if planning_dataframe is not None:
-            self.selected_patients_label.entry_variable.set(
-                str(len(planning_dataframe)) + "(" + str(round(len(planning_dataframe) / len(current_data_frame), 2)) + "%)")
+            self.selected_patients_label.entry_variable.set(str(len(planning_dataframe))
+                                                            + " ("
+                                                            + str(round(len(planning_dataframe) / len(current_data_frame) * 100, 2))
+                                                            + "%)")
+            
             anesthesia_selected_patients = len(planning_dataframe.query("Anestesista != ''"))
 
             run_info = self.runs_statistics[current_tab_name]
+            self.anesthesia_selected_patients_label.entry_variable.set(str(anesthesia_selected_patients))
             self.average_OR1_OR2_utilization_label.entry_variable.set(str(round(run_info["specialty_1_OR_utilization"] * 100, 2)) + "%")
             self.average_OR3_OR4_utilization_label.entry_variable.set(str(round(run_info["specialty_2_OR_utilization"] * 100, 2)) + "%")
             self.specialty_1_selected_ratio_label.entry_variable.set(str(round(run_info["specialty_1_selection_ratio"] * 100, 2)) + "%")

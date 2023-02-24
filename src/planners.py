@@ -1138,7 +1138,7 @@ class Solution:
                                                  day=t,
                                                  operatingTime=self.p[i],
                                                  arrival_delay=arrival_delay,
-                                                 covid=self.c[i], 
+                                                 infection=self.c[i], 
                                                  precedence=self.precedence[i], 
                                                  delayWeight=None, 
                                                  anesthesia=self.a[i], 
@@ -1150,7 +1150,7 @@ class Solution:
 
 
 class Patient:
-    def __init__(self, id, priority, room, specialty, day, operatingTime, arrival_delay, covid, precedence, delayWeight, anesthesia, anesthetist, order, delay):
+    def __init__(self, id, priority, room, specialty, day, operatingTime, arrival_delay, infection, precedence, delayWeight, anesthesia, anesthetist, order, delay):
         self.id = id
         self.priority = priority
         self.room = room
@@ -1158,7 +1158,7 @@ class Patient:
         self.day = day
         self.operatingTime = operatingTime
         self.arrival_delay = arrival_delay
-        self.covid = covid
+        self.infection = infection
         self.precedence = precedence
         self.delayWeight = delayWeight
         self.anesthesia = anesthesia
@@ -1167,7 +1167,7 @@ class Patient:
         self.delay = delay
 
     def __str__(self):
-        return f'id:{self.id:4}; priority:{self.priority:4}; room:{self.room:2}; specialty:{self.specialty:2}; day:{self.day:2}; operatingTime:{self.operatingTime:4}; covid:{self.covid:2}; precedence:{self.precedence:2}; delay weight:{self.none_to_empty(self.delayWeight):3} anesthesia:{self.none_to_empty(self.anesthesia):2}; anesthetist:{self.none_to_empty(self.anesthetist):2}; order:{self.order:6};'
+        return f'id:{self.id:4}; priority:{self.priority:4}; room:{self.room:2}; specialty:{self.specialty:2}; day:{self.day:2}; operatingTime:{self.operatingTime:4}; infection:{self.infection:2}; precedence:{self.precedence:2}; delay weight:{self.none_to_empty(self.delayWeight):3} anesthesia:{self.none_to_empty(self.anesthesia):2}; anesthetist:{self.none_to_empty(self.anesthetist):2}; order:{self.order:6};'
 
     def none_to_empty(self, s):
         if(s is None):
@@ -1293,7 +1293,7 @@ class SolutionVisualizer:
                     arrival_delay = patient.arrival_delay * patient.delay
                     finish = start + datetime.timedelta(minutes=round(patient.operatingTime)) + datetime.timedelta(minutes=round(arrival_delay))
                     room = "S" + str(k)
-                    covid = "Y" if patient.covid == 1 else "N"
+                    infection = "Y" if patient.infection == 1 else "N"
                     precedence = patient.precedence
                     anesthesia = "Y" if patient.anesthesia == 1 else "N"
                     anesthetist = "A" + str(patient.anesthetist) if patient.anesthetist != 0 else ""
@@ -1303,8 +1303,8 @@ class SolutionVisualizer:
                     elif(precedence == 3):
                         precedence = "Dirty procedure"
                     elif(precedence == 5):
-                        precedence = "Covid-19 patient"
-                    dataFrameToAdd = pd.DataFrame([dict(Start=start, Finish=finish, Room=room, Covid=covid, Precedence=precedence, Anesthesia=anesthesia, Anesthetist=anesthetist, Delay=delay)])
+                        precedence = "Infectious patient"
+                    dataFrameToAdd = pd.DataFrame([dict(Start=start, Finish=finish, Room=room, Infection=infection, Precedence=precedence, Anesthesia=anesthesia, Anesthetist=anesthetist, Delay=delay)])
                     df = pd.concat([df, dataFrameToAdd])
             dataFrames.append(df)
             dff = pd.concat([df, dff])
@@ -1312,7 +1312,7 @@ class SolutionVisualizer:
         # sort legend's labels
         sortingOrder = ["Clean procedure",
                         "Dirty procedure",
-                        "Covid-19 patient"]
+                        "Infectious patient"]
         order  = []
         for precedenceValue in dff["Precedence"].tolist():
             if(not precedenceValue in order):
@@ -1323,7 +1323,7 @@ class SolutionVisualizer:
 
         color_discrete_map = {'Clean procedure': '#38A6A5', 
                                 'Dirty procedure': '#73AF48',
-                                'Covid-19 patient': '#E17C05'}
+                                'Infectious patient': '#E17C05'}
 
         fig = px.timeline(dff,
                           x_start="Start",
@@ -1332,8 +1332,8 @@ class SolutionVisualizer:
                           color="Precedence",
                           text="Anesthetist",
                           labels={"Start": "Procedure start", "Finish": "Procedure end", "Room": "Operating room",
-                                  "Covid": "Covid patient", "Precedence": "Procedure Type and Delay", "Anesthesia": "Need for anesthesia", "Anesthetist": "Assigned anesthetist"},
-                          hover_data=["Anesthesia", "Anesthetist", "Precedence", "Covid", "Delay"],
+                                  "Infection": "Infectious patient", "Precedence": "Procedure Type and Delay", "Anesthesia": "Need for anesthesia", "Anesthetist": "Assigned anesthetist"},
+                          hover_data=["Anesthesia", "Anesthetist", "Precedence", "Infection", "Delay"],
                           color_discrete_map=color_discrete_map
                           )
 

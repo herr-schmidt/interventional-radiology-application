@@ -58,8 +58,8 @@ class EntryWithLabel(ctk.CTkFrame):
                                   font=label_font)
 
         if label_position == ctk.TOP:
-            self.label.pack(side=ctk.TOP, expand=True, anchor=ctk.W)
-            self.entry.pack(side=ctk.TOP, expand=True, anchor=ctk.W)
+            self.label.pack(side=ctk.TOP, anchor=ctk.W)
+            self.entry.pack(side=ctk.TOP, expand=True, anchor=ctk.W, fill=ctk.X)
         else:
             self.label.pack(side=ctk.LEFT)
             self.entry.pack(side=ctk.RIGHT, expand=True, fill=ctk.X)

@@ -1,19 +1,13 @@
 import re
 from PIL import Image
 from tkinter import filedialog
-import pandas
 import customtkinter as ctk
 from bootstraptable import Table, FitCriterion
 from controller import Controller
-from math import ceil, floor
-from planners import HeuristicLBBDPlanner, SolutionVisualizer
+from math import ceil
 from util import DialogMode
-import pandas as pd
-from embedded_browser import MainBrowserFrame, cef
-import data
-from datetime import datetime, timedelta
-from threading import Thread
-from queue import Queue
+from embedded_browser import MainBrowserFrame
+from threading import Thread, Event
 
 
 class EntryWithLabel(ctk.CTkFrame):
@@ -164,17 +158,6 @@ class GUI(object):
     SOURCE_SANS_PRO_MEDIUM = ("Source Sans Pro", 18)
     SOURCE_SANS_PRO_MEDIUM_BOLD = ("Source Sans Pro Bold", 18)
 
-    PLANNING_HEADER = {"Nome": [],
-                       "Cognome": [],
-                       "Specialità richiesta": [],
-                       "Reparto di provenienza": [],
-                       "Prestazioni": [],
-                       "Anestesia": [],
-                       "Infezioni": [],
-                       "Data inserimento in lista": [],
-                       "MTBT (giorni)": []
-                       }
-
     WELCOME_MESSAGE = "Welcome to the Interventional Radiology Planner and Scheduler."
     PROCEDURES = {"69-39993": "69-39993",
                   "69-87541": "69-87541",
@@ -308,6 +291,8 @@ class GUI(object):
             self.title_label = ctk.CTkLabel(master=self.frame, text="Impostazioni solver", font=self.parent_view.SOURCE_SANS_PRO_MEDIUM,
                                             fg_color=self.labels_color, text_color=self.labels_text_color)
 
+            solver_parameters = self.parent_view.controller.get_solver_parameters()
+
             self.gap_slider = SliderWithEntry(master=self.frame,
                                               starting_value=0,
                                               ending_value=5,
@@ -319,7 +304,8 @@ class GUI(object):
                                               label_color=self.labels_color,
                                               label_text_color=self.labels_text_color,
                                               label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
-                                              measure_unit_suffix="(%)")
+                                              measure_unit_suffix="(%)",
+                                              default_var_value=solver_parameters["solver_gap"])
 
             self.time_limit_slider = SliderWithEntry(master=self.frame,
                                                      starting_value=600,
@@ -333,7 +319,8 @@ class GUI(object):
                                                      label_text_color=self.labels_text_color,
                                                      label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                                      measure_unit_suffix="(s)",
-                                                     var_type=ctk.IntVar)
+                                                     var_type=ctk.IntVar,
+                                                     default_var_value=solver_parameters["solver_time_limit"])
 
             self.robustness_param_slider = SliderWithEntry(master=self.frame,
                                                            starting_value=0,
@@ -347,7 +334,8 @@ class GUI(object):
                                                            label_text_color=self.labels_text_color,
                                                            label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                                            measure_unit_suffix="(pz./sala)",
-                                                           var_type=ctk.IntVar)
+                                                           var_type=ctk.IntVar,
+                                                           default_var_value=solver_parameters["solver_robustness_param"])
 
             self.operating_room_time_slider = SliderWithEntry(master=self.frame,
                                                               starting_value=0,
@@ -361,7 +349,8 @@ class GUI(object):
                                                               label_text_color=self.labels_text_color,
                                                               label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                                               measure_unit_suffix="(min/giorno)",
-                                                              var_type=ctk.IntVar)
+                                                              var_type=ctk.IntVar,
+                                                              default_var_value=solver_parameters["solver_operating_room_time"])
 
             self.anesthetists_slider = SliderWithEntry(master=self.frame,
                                                        starting_value=0,
@@ -375,7 +364,8 @@ class GUI(object):
                                                        label_text_color=self.labels_text_color,
                                                        label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                                        measure_unit_suffix="(al giorno)",
-                                                       var_type=ctk.IntVar)
+                                                       var_type=ctk.IntVar,
+                                                       default_var_value=solver_parameters["solver_anesthetists"])
 
             self.anesthetists_time_slider = SliderWithEntry(master=self.frame,
                                                             starting_value=0,
@@ -389,7 +379,8 @@ class GUI(object):
                                                             label_text_color=self.labels_text_color,
                                                             label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                                             measure_unit_suffix="(min/giorno)",
-                                                            var_type=ctk.IntVar)
+                                                            var_type=ctk.IntVar,
+                                                            default_var_value=solver_parameters["solver_anesthetists_time"])
 
             self.confirm_button = ctk.CTkButton(master=self.dialog,
                                                 text="Salva",
@@ -418,13 +409,22 @@ class GUI(object):
             new_anesthetists = self.anesthetists_slider.slider_var.get()
             new_anesthetists_time = self.anesthetists_time_slider.slider_var.get()
 
-            self.parent_view.solver_gap = round(float(new_gap), 2)
-            self.parent_view.solver_time_limit = int(new_timelimit)
-            self.parent_view.solver_robustness_param = int(new_robustness_parameter)
-            self.parent_view.solver_operating_room_time = int(new_operating_room_time)
-            self.parent_view.solver_anesthetists = int(new_anesthetists)
-            self.parent_view.solver_anesthetists_time = int(new_anesthetists_time)
+            solver_gap = round(float(new_gap), 2)
+            solver_time_limit = int(new_timelimit)
+            solver_robustness_param = int(new_robustness_parameter)
+            solver_operating_room_time = int(new_operating_room_time)
+            solver_anesthetists = int(new_anesthetists)
+            solver_anesthetists_time = int(new_anesthetists_time)
 
+            solver_parameters = {"solver_gap": solver_gap,
+                                 "solver_time_limit": solver_time_limit,
+                                 "solver_robustness_param": solver_robustness_param,
+                                 "solver_operating_room_time": solver_operating_room_time,
+                                 "solver_anesthetists": solver_anesthetists,
+                                 "solver_anesthetists_time": solver_anesthetists_time
+                                 }
+            
+            self.parent_view.controller.update_solver_parameters(solver_parameters)
             self.parent_view.update_solver_summary()
 
             self.dialog.destroy()
@@ -793,26 +793,17 @@ class GUI(object):
         self.dialogs = []
         self.planning_number = 0
         self.tables = dict()
-        self.tables_dataframes = dict()  # dict of length 2 lists: 0 -> patients list; 1 -> selected patients list
+        
         self.runs_statistics = dict()  # dict
 
         self.tables_edit_buttons = dict()  # keep track of "Edit patient" buttons (which we may wat to enable/disable)
         self.tables_switch_buttons = dict()  # keep track of "Switch to planning" buttons (which we may wat to enable/disable)
         self.interactive_planning_buttons = dict()  # keep track of "Switch to planning" buttons (which we may wat to enable/disable)
 
-        self.solver_gap = 0
-        self.solver_time_limit = 600
-        self.solver_robustness_param = 2
-        self.solver_anesthetists = 1
-        self.solver_anesthetists_time = 270
-        self.solver_operating_room_time = 270
-
         self.controller: Controller = None
 
         # for communicating results safely among gui thread and optimization thread
-        self.optimization_results_queue = Queue()
-
-        self.initializeUI()
+        self.optimization_completed_event = Event()
 
     def bind_controller(self, controller):
         self.controller = controller
@@ -904,16 +895,14 @@ class GUI(object):
                                                  text="Riepilogo impostazioni solver",
                                                  font=self.SOURCE_SANS_PRO_MEDIUM_BOLD)
 
-        self.gap_summary_label = self.create_summary_entry(label_text="Gap relativo tollerato: ", entry_text=str(self.solver_gap) + " (%)")
-        self.time_limit_summary_label = self.create_summary_entry(label_text="Timeout: ", entry_text=str(self.solver_time_limit) + " (s)")
-        self.robustness_summary_label = self.create_summary_entry(label_text="Parametro di robustezza: ",
-                                                                  entry_text=str(self.solver_robustness_param) + " (pz./sala)")
-        self.operating_room_time_label = self.create_summary_entry(label_text="Disponibilità sala operatoria: ",
-                                                                   entry_text=str(self.solver_operating_room_time) + " (min/giorno)")
-        self.anesthetists_label = self.create_summary_entry(label_text="Anestesisti disponibili: ",
-                                                            entry_text=str(self.solver_anesthetists) + " (per giorno)")
-        self.anesthetists_time_label = self.create_summary_entry(label_text="Disponibilità anestesista: ",
-                                                                 entry_text=str(self.solver_anesthetists_time) + " (min/giorno)")
+        self.gap_summary_label = self.create_summary_entry(label_text="Gap relativo tollerato: ")
+        self.time_limit_summary_label = self.create_summary_entry(label_text="Timeout: ")
+        self.robustness_summary_label = self.create_summary_entry(label_text="Parametro di robustezza: ")
+        self.operating_room_time_label = self.create_summary_entry(label_text="Disponibilità sala operatoria: ")
+        self.anesthetists_label = self.create_summary_entry(label_text="Anestesisti disponibili: ")
+        self.anesthetists_time_label = self.create_summary_entry(label_text="Disponibilità anestesista: ")
+
+        self.update_solver_summary()
 
         self.solution_summary_label = ctk.CTkLabel(master=self.summary_frame,
                                                    fg_color=(self.THEME1_COLOR2,
@@ -1056,12 +1045,14 @@ class GUI(object):
                                       mode=DialogMode.EDIT)
 
     def update_solver_summary(self):
-        self.gap_summary_label.entry_variable.set(str(self.solver_gap) + " (%)")
-        self.time_limit_summary_label.entry_variable.set(str(self.solver_time_limit) + " (s)")
-        self.robustness_summary_label.entry_variable.set(str(self.solver_robustness_param) + " (pz./sala)")
-        self.operating_room_time_label.entry_variable.set(str(self.solver_operating_room_time) + " (min/giorno)")
-        self.anesthetists_label.entry_variable.set(str(self.solver_anesthetists) + " (al giorno)")
-        self.anesthetists_time_label.entry_variable.set(str(self.solver_anesthetists_time) + " (min/giorno)")
+        solver_parameters = self.controller.get_solver_parameters()
+
+        self.gap_summary_label.entry_variable.set(str(solver_parameters["solver_gap"]) + " (%)")
+        self.time_limit_summary_label.entry_variable.set(str(solver_parameters["solver_time_limit"]) + " (s)")
+        self.robustness_summary_label.entry_variable.set(str(solver_parameters["solver_robustness_param"]) + " (pz./sala)")
+        self.operating_room_time_label.entry_variable.set(str(solver_parameters["solver_operating_room_time"]) + " (min/giorno)")
+        self.anesthetists_label.entry_variable.set(str(solver_parameters["solver_anesthetists"]) + " (al giorno)")
+        self.anesthetists_time_label.entry_variable.set(str(solver_parameters["solver_anesthetists_time"]) + " (min/giorno)")
 
     def close_active_tab(self):
         active_tab = self.notebook.get()
@@ -1078,14 +1069,14 @@ class GUI(object):
             button.configure(text="Passa a lista pazienti", image=icon)
             label.configure(text="Pianificazione")
 
-            new_data_frame = self.tables_dataframes[selected_tab][1]
+            new_data_frame = self.controller.get_planning_dataframe(selected_tab)
 
         elif label.cget("text") == "Pianificazione":
             icon = ctk.CTkImage(Image.open("resources\\timetable.png"),
                                 Image.open("resources\\timetable_w.png"))
             button.configure(text="Passa a pianificazione", image=icon)
             label.configure(text="Lista pazienti")
-            new_data_frame = self.tables_dataframes[selected_tab][0]
+            new_data_frame = self.controller.get_patients_dataframe(selected_tab)
 
         table.update_data_frame(new_data_frame)
 
@@ -1103,7 +1094,7 @@ class GUI(object):
         if selected_file is None:
             return
 
-        controller.import_sheet(selected_file=selected_file)
+        self.controller.import_sheet(selected_file=selected_file)
 
     def launch_optimization(self):
         self.optimization_dialog = self.OptimizationProgressDialog(parent_view=self,
@@ -1121,79 +1112,32 @@ class GUI(object):
                                                                              self.THEME2_COLOR1),
                                                               checkmarks_color=self.WHITE,
                                                               checkboxes_color=self.CRAYON_BLUE)
+        active_tab_name = self.notebook.get()
 
-        optimization_thread = Thread(target=self.compute_solution, args=(self.optimization_results_queue, ))
-        self.update_view_with_solution()
+        optimization_thread = Thread(target=self.controller.compute_solution, args=(active_tab_name, self.optimization_completed_event, ))
         optimization_thread.start()
+        self.wait_for_solution()
+
+    def wait_for_solution(self):
+        if not self.optimization_completed_event.is_set():
+            self.master.after(ms=1000, func=self.wait_for_solution)
+            return
+        
+        self.update_view_with_solution()
+        self.optimization_completed_event.clear()
 
     def update_view_with_solution(self):
-        if self.optimization_results_queue.empty():
-            self.master.after(ms=1000, func=self.update_view_with_solution)
-            return
-
-        result = self.optimization_results_queue.get()
-        solution = result[0]
-        run_info = result[1]
-
-        if solution:
-            sv = SolutionVisualizer()
-            sv.plot_graph(solution, file_name=self.notebook.get())
-
-        planning_dataframe = {"Nome": [],
-                              "Cognome": [],
-                              "Sala": [],
-                              "Data operazione": [],
-                              "Orario inizio": [],
-                              "Ritardo": [],
-                              "Anestesista": [],
-                              "Infezioni": []
-                              }
-
-        if solution:
-            for key in solution.keys():
-                for patient in solution[key]:
-                    planning_dataframe["Nome"].append(patient.id)
-                    planning_dataframe["Cognome"].append(patient.id)
-                    planning_dataframe["Sala"].append("S" + str(key[0]))
-
-                    today = datetime.now().weekday()
-                    days_to_monday = 7 - today
-                    next_monday = datetime.now() + timedelta(days=days_to_monday)
-                    target_date = next_monday + timedelta(days=key[1] - 1)  # minus one since t = {1, 2, 3, 4, 5}
-                    planning_dataframe["Data operazione"].append(target_date.date())
-
-                    target_time = datetime(year=1970, month=1, day=1, hour=8, minute=0) + timedelta(minutes=patient.order)
-
-                    planning_dataframe["Orario inizio"].append(target_time.time())
-
-                    def get_delay(delay): return "Sì" if delay else "No"
-                    planning_dataframe["Ritardo"].append(get_delay(patient.delay))
-
-                    def get_anesthetist(anesthetist): return "A" + str(anesthetist) if anesthetist > 0 else ""
-                    planning_dataframe["Anestesista"].append(get_anesthetist(patient.anesthetist))
-
-                    def get_infection_info(infection): return "Sì" if infection else "No"
-                    planning_dataframe["Infezioni"].append(get_infection_info(patient.infection))
-
         current_tab_name = self.notebook.get()
-        self.tables_dataframes[current_tab_name][1] = pd.DataFrame(data=planning_dataframe)
-        self.runs_statistics[current_tab_name] = run_info
-
-        self.optimization_dialog.destroy()
-
         self.tables_switch_buttons[current_tab_name].configure(state=ctk.NORMAL)
         self.interactive_planning_buttons[current_tab_name].configure(state=ctk.NORMAL)
 
         self.update_patients_summary()
 
-    def compute_solution(self, optimization_results_queue: Queue):
-        parameter_dict = self.initialize_data_from_table()
-        planner = HeuristicLBBDPlanner(timeLimit=self.solver_time_limit, gap=self.solver_gap, iterations_cap=10, solver="cplex")
-        planner.solve_model(parameter_dict)
-        run_info = planner.extract_run_info()
-        solution = planner.extract_solution()
+        self.optimization_dialog.destroy()
 
-        optimization_results_queue.put((solution, run_info))
+    def compute_solution(self):
+        active_tab_name = self.notebook.get()
+        self.controller.compute_solution(active_tab_name)
 
     def export_callback(self):
         selected_filetype = ctk.StringVar()
@@ -1207,12 +1151,10 @@ class GUI(object):
         file_name += str(extension)
 
         selected_tab = self.notebook.get()
-        table = self.tables[selected_tab]
-
-        self.controller.export_sheet(table.data_frame, file_name)
+        self.controller.export_sheet(selected_tab, file_name)
 
     def new_planning_callback(self):
-        controller.create_empty_planning()
+        self.controller.create_empty_planning()
 
     def create_notebook(self):
         self.notebook = ctk.CTkTabview(self.master,
@@ -1235,10 +1177,6 @@ class GUI(object):
             self.tables_edit_buttons[active_table_index].configure(state=ctk.DISABLED)
 
     def initialize_input_table(self, tab_name, data_frame):
-        if data_frame is None:
-            columns = self.PLANNING_HEADER
-            data_frame = pandas.DataFrame(data=columns)
-
         tab = self.notebook.add(tab_name)
         table_upper_button_frame = ctk.CTkFrame(master=tab,
                                                 fg_color=(self.WHITE, self.THEME2_COLOR2))
@@ -1318,7 +1256,6 @@ class GUI(object):
                       height=100)
 
         self.tables[tab_name] = table
-        self.tables_dataframes[tab_name] = [data_frame, None]
 
         self.tables_edit_buttons[tab_name] = edit_patient_button
         self.tables_switch_buttons[tab_name] = switch_view_button
@@ -1360,187 +1297,25 @@ class GUI(object):
                                          pady=(2, 2))
         table.pack(side=ctk.TOP)
 
-    def list_to_dict(self, list):
-        items = len(list)
-        return {key: value for (key, value) in zip([i for i in range(1, items + 1)], list)}
-
-    # we assume the same timespan for each room, on each day
-    def generate_room_availability_table(self, operating_rooms, time_horizon, operating_room_time):
-        return {(k, t): operating_room_time for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
-
-    # we assume same availability for each anesthetist
-    def generate_anesthetists_availability_table(self, anesthetists, time_horizon, anesthetists_availability):
-        return {(a, t): anesthetists_availability for a in range(1, anesthetists + 1) for t in range(1, time_horizon + 1)}
-
-    def generate_room_specialty_mapping(self, specialties, operating_rooms, time_horizon):
-        table = {(j, k, t): 0 for j in range(1, specialties + 1) for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
-        for key in table.keys():
-            if key[0] == 1 and (key[1] in [1, 2]):
-                table[key] = 1
-            if key[0] == 2 and (key[1] in [3, 4]):
-                table[key] = 1
-        return table
-
-    def generate_procedures_durations(self, procedures):
-        procedures_durations = {}
-        for item in procedures.items():
-            services = item[1]  # is a string of the form "69-8847|69-88495"
-            services_key = frozenset(services.split("|"))
-            procedures_durations[item[0]] = data.surgery_room_occupancy_mapping[services_key]
-
-        return procedures_durations
-
-    def generate_procedures_delays(self, origin_wards):
-        procedures_delays = {}
-        for item in origin_wards.items():
-            origin_ward = item[1]  # is a string, for now. Better translate such strings to some code
-            procedures_delays[(1, item[0])] = data.ward_arrival_delay_mapping[origin_ward]
-
-        return procedures_delays
-
-    def compute_precedences(self, procedures, infection_flags):
-        precedences = {}
-        for item in procedures.items():
-            services = item[1]  # is a string of the form "69-8847|69-88495"
-            services_key = frozenset(services.split("|"))
-            if data.dirty_surgery_mapping[services_key] == 0 and infection_flags[item[0]] == 0:
-                precedences[item[0]] = 1
-            if data.dirty_surgery_mapping[services_key] == 1 and infection_flags[item[0]] == 0:
-                precedences[item[0]] = 3
-            if data.dirty_surgery_mapping[services_key] == 0 and infection_flags[item[0]] == 1:
-                precedences[item[0]] = 5
-            if data.dirty_surgery_mapping[services_key] == 1 and infection_flags[item[0]] == 1:
-                precedences[item[0]] = 5  # for now...
-
-        return precedences
-
-    def compute_u_parameters(self, patients, precedences):
-        u = {}
-        for i1 in range(1, patients + 1):
-            for i2 in range(1, patients + 1):
-                u[(i1, i2)] = 0
-                u[(i2, i1)] = 0
-
-                if i1 == i2:
-                    continue
-                if precedences[i1] < precedences[i2]:
-                    u[(i1, i2)] = 1
-                if precedences[i2] < precedences[i1]:
-                    u[(i2, i1)] = 1
-        return u
-
-    # compute priorities (r_i) with respect to planning day
-    def compute_priorities(self, waiting_list_insertion_dates, mtbt_list):
-        today = pd.Timestamp(datetime.now())
-        priorities = []
-
-        for (insertion_date, mtbt) in zip(waiting_list_insertion_dates.values(), mtbt_list.values()):
-            delta = (today - insertion_date).days
-            priorities.append(100 * delta / mtbt)
-
-        return self.list_to_dict(priorities)
-
-    # assume same robustness_parameter value for each (k, t) slot (single delay type q = 1)
-    def compute_robustness_table(self, operating_rooms, time_horizon, robustness_parameter):
-        return {(1, k, t): robustness_parameter for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
-
-    # compute a dict containing parameters for the model, needed by the solver
-    def initialize_data_from_table(self):
-        active_tab_name = self.notebook.get()
-        data_frame = self.tables_dataframes[active_tab_name][0]
-
-        patients = len(data_frame)
-        specialties_number = 2
-        operating_rooms = 4
-        time_horizon = 5
-        max_operating_room_time = self.solver_operating_room_time
-
-        patient_ids = self.list_to_dict([i for i in range(1, patients + 1)])
-        anesthesia_flags = self.list_to_dict(data_frame.loc[:, "Anestesia"])
-        infection_flags = self.list_to_dict(data_frame.loc[:, "Infezioni"])
-        specialties = self.list_to_dict(data_frame.loc[:, "Specialità richiesta"])
-        origin_wards = self.list_to_dict(data_frame.loc[:, "Reparto di provenienza"])
-        procedures = self.list_to_dict(data_frame.loc[:, "Prestazioni"])
-        waiting_list_insertion_dates = self.list_to_dict(data_frame.loc[:, "Data inserimento in lista"])
-        mtbt_list = self.list_to_dict(data_frame.loc[:, "MTBT (giorni)"])
-        priorities = self.compute_priorities(waiting_list_insertion_dates, mtbt_list)
-        procedures_durations = self.generate_procedures_durations(procedures)
-        procedures_delays = self.generate_procedures_delays(origin_wards)
-        precedences = self.compute_precedences(procedures, infection_flags)
-        robustness_parameters = self.compute_robustness_table(operating_rooms, time_horizon, self.solver_robustness_param)
-
-        return {
-            None: {
-                'I': {None: patients},
-                'J': {None: specialties_number},
-                'K': {None: operating_rooms},
-                'T': {None: time_horizon},
-                'A': {None: self.solver_anesthetists},
-                'M': {None: 7},
-                'Q': {None: 1},
-                's': self.generate_room_availability_table(operating_rooms, time_horizon, self.solver_operating_room_time),
-                'An': self.generate_anesthetists_availability_table(self.solver_anesthetists, time_horizon, self.solver_anesthetists_time),
-                'Gamma': robustness_parameters,
-                'tau': self.generate_room_specialty_mapping(specialties_number, operating_rooms, time_horizon),
-                'p': procedures_durations,
-                'd': procedures_delays,
-                'r': priorities,
-                'a': anesthesia_flags,
-                'c': infection_flags,
-                'u': self.compute_u_parameters(patients, precedences),
-                'patientId': patient_ids,
-                'specialty': specialties,
-                'precedence': precedences,
-                'bigM': {
-                    1: floor(max_operating_room_time / min([operating_time for operating_time in procedures_durations.values()])),
-                    2: max_operating_room_time,
-                    3: max_operating_room_time,
-                    4: max_operating_room_time,
-                    5: max_operating_room_time,
-                    6: patients
-                }
-            }
-        }
-
     def update_patients_summary(self):
         current_tab_name = self.notebook.get()
-        current_data_frame = self.tables_dataframes[current_tab_name][0]
+        solution_summary = self.controller.compute_solution_summary(current_tab_name)
 
-        total_patients = len(current_data_frame)
-        anesthesia_patients = current_data_frame.query("Anestesia == True").shape[0]
-        infectious_patients = current_data_frame.query("Infezioni == True").shape[0]
+        total_patients = solution_summary["total_patients"]
+        anesthesia_patients = solution_summary["anesthesia_patients"]
+        infectious_patients = solution_summary["infectious_patients"]
+        selected_patients = solution_summary["selected_patients"]
+        anesthesia_selected_patients = solution_summary["anesthesia_selected_patients"]
+        infectious_selected_patients = solution_summary["infectious_selected_patients"]
+        delayed_selected_patients = solution_summary["delayed_selected_patients"]
+        average_OR1_OR2_utilization = solution_summary["average_OR1_OR2_utilization"]
+        average_OR3_OR4_utilization = solution_summary["average_OR3_OR4_utilization"]
+        specialty_1_selected_ratio = solution_summary["specialty_1_selected_ratio"]
+        specialty_2_selected_ratio = solution_summary["specialty_2_selected_ratio"]
 
         self.total_patients_summary_entry.entry_variable.set(str(total_patients))
         self.total_anesthesia_patients_summary_entry.entry_variable.set(str(anesthesia_patients))
         self.total_infectious_patients_summary_entry.entry_variable.set(str(infectious_patients))
-
-        planning_dataframe = self.tables_dataframes[current_tab_name][1]
-
-        selected_patients = "N/A"
-        anesthesia_selected_patients = "N/A"
-        infectious_selected_patients = "N/A"
-        delayed_selected_patients = "N/A"
-        average_OR1_OR2_utilization = "N/A"
-        average_OR3_OR4_utilization = "N/A"
-        specialty_1_selected_ratio = "N/A"
-        specialty_2_selected_ratio = "N/A"
-
-        if planning_dataframe is not None:
-            selected_patients = (str(len(planning_dataframe))
-                                + " ("
-                                + str(round(len(planning_dataframe) / len(current_data_frame) * 100, 2))
-                                + "%)"
-                                )
-            
-            anesthesia_selected_patients = str(len(planning_dataframe.query("Anestesista != ''")))
-            infectious_selected_patients = str(len(planning_dataframe.query("Infezioni == 'Sì'")))
-            delayed_selected_patients = str(len(planning_dataframe.query("Ritardo == 'Sì'")))
-
-            run_info = self.runs_statistics[current_tab_name]
-            average_OR1_OR2_utilization = str(round(run_info["specialty_1_OR_utilization"] * 100, 2)) + "%"
-            average_OR3_OR4_utilization = str(round(run_info["specialty_2_OR_utilization"] * 100, 2)) + "%"
-            specialty_1_selected_ratio = str(round(run_info["specialty_1_selection_ratio"] * 100, 2)) + "%"
-            specialty_2_selected_ratio = str(round(run_info["specialty_2_selection_ratio"] * 100, 2)) + "%"
 
         self.selected_patients_label.entry_variable.set(selected_patients)
         self.anesthesia_selected_patients_label.entry_variable.set(anesthesia_selected_patients)
@@ -1582,18 +1357,3 @@ class GUI(object):
         return button
 
 
-root = ctk.CTk()
-ctk.set_appearance_mode("light")
-root.title("Interventional Radiology Planner & Scheduler")
-root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(),
-                                   root.winfo_screenheight()))
-root.state("zoomed")
-
-gui = GUI(root)
-controller = Controller(model=None, view=gui)
-gui.bind_controller(controller=controller)
-
-# disable gpu in order to avoid the pesky scaling issue
-cef.Initialize(settings={}, switches={'disable-gpu': ""})
-root.mainloop()
-cef.Shutdown()

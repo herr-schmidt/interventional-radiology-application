@@ -1,4 +1,3 @@
-import sys
 import re
 from PIL import Image
 from tkinter import filedialog
@@ -8,7 +7,7 @@ from bootstraptable import Table, FitCriterion
 from controller import Controller
 from math import ceil, floor
 from planners import HeuristicLBBDPlanner, SolutionVisualizer
-from util import StdoutRedirector, DialogMode
+from util import DialogMode
 import pandas as pd
 from embedded_browser import MainBrowserFrame, cef
 import data
@@ -30,6 +29,7 @@ class EntryWithLabel(ctk.CTkFrame):
                  entry_border_width=1,
                  entry_font=("Source Sans Pro", 14),
                  entry_state=ctk.NORMAL,
+                 entry_text_justify="left",
                  label_font=("Source Sans Pro", 14),
                  label_position=ctk.LEFT,
                  **kwargs):
@@ -45,7 +45,9 @@ class EntryWithLabel(ctk.CTkFrame):
                                   border_color="gray80",
                                   state=entry_state,
                                   fg_color=entry_color,
-                                  font=entry_font
+                                  font=entry_font,
+                                  justify=entry_text_justify,
+                                  width=80
                                   )
 
         self.label = ctk.CTkLabel(master=self,
@@ -56,11 +58,11 @@ class EntryWithLabel(ctk.CTkFrame):
                                   font=label_font)
 
         if label_position == ctk.TOP:
-            self.label.grid(row=0, column=0, sticky=ctk.NSEW)
-            self.entry.grid(row=1, column=0, sticky=ctk.NSEW)
+            self.label.pack(side=ctk.TOP, expand=True, anchor=ctk.W)
+            self.entry.pack(side=ctk.TOP, expand=True, anchor=ctk.W)
         else:
-            self.label.grid(row=0, column=0, sticky=ctk.NSEW)
-            self.entry.grid(row=0, column=1, sticky=ctk.NSEW)
+            self.label.pack(side=ctk.LEFT)
+            self.entry.pack(side=ctk.RIGHT, expand=True, fill=ctk.X)
 
     def destroy(self):
         self.entry.destroy()
@@ -128,7 +130,7 @@ class SliderWithEntry(ctk.CTkFrame):
                                   border_width=entry_border_width,
                                   fg_color=entry_color,
                                   font=label_text_font,
-                                  width=90)
+                                  width=100)
 
         self.label.grid(row=0, column=0, sticky=ctk.W, padx=(10, 0), pady=(10, 0))
         self.slider.grid(row=1, column=0, padx=(10, 0), pady=(5, 5))
@@ -788,13 +790,6 @@ class GUI(object):
         self.screen_width = master.winfo_width()
         self.screen_height = master.winfo_height()
 
-        self.toolbar_width = floor(self.screen_width * 0.15)
-        self.summary_frame_width = floor(self.screen_width * 0.2)
-        self.notebook_width = floor(self.screen_width * 0.65)
-
-        self.notebook_height = floor(self.screen_height * 0.8)
-        self.textbox_height = floor(self.screen_height * 0.4)
-
         self.dialogs = []
         self.planning_number = 0
         self.tables = dict()
@@ -814,6 +809,7 @@ class GUI(object):
 
         self.controller: Controller = None
 
+        # for communicating results safely among gui thread and optimization thread
         self.optimization_results_queue = Queue()
 
         self.initializeUI()
@@ -834,8 +830,7 @@ class GUI(object):
         self.toolbar_frame = ctk.CTkFrame(master=self.master,
                                           fg_color=(self.THEME1_COLOR2,
                                                     self.THEME2_COLOR2),
-                                          corner_radius=0,
-                                          width=self.toolbar_width)
+                                          corner_radius=0)
 
         self.toolbar_frame.grid(row=0, column=0, sticky=ctk.NSEW)
 
@@ -858,40 +853,40 @@ class GUI(object):
                               entry_color=(self.WHITE,
                                            self.THEME2_COLOR2),
                               entry_border_width=0,
-                              entry_state=ctk.DISABLED)
+                              entry_state=ctk.DISABLED,
+                              entry_text_justify="right")
 
     def pack_summary_frame(self):
         self.summary_frame.grid(row=0, column=2, sticky=ctk.NSEW, padx=(10, 10), pady=(18, 10))
 
         self.summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(20, 20), pady=(10, 0))
-        self.total_patients_summary_entry.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.total_anesthesia_patients_summary_entry.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.total_infectious_patients_summary_entry.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.total_patients_summary_entry.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.total_anesthesia_patients_summary_entry.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.total_infectious_patients_summary_entry.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
 
         self.solver_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(20, 20), pady=(10, 0))
-        self.gap_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.time_limit_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.robustness_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.operating_room_time_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.anesthetists_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.anesthetists_time_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.gap_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.time_limit_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.robustness_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.operating_room_time_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.anesthetists_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.anesthetists_time_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
 
         self.solution_summary_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(20, 20), pady=(10, 0))
-        self.selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.anesthesia_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.infectious_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.delayed_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.average_OR1_OR2_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.average_OR3_OR4_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.specialty_1_selected_ratio_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
-        self.specialty_2_selected_ratio_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0))
+        self.selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.anesthesia_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.infectious_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.delayed_selected_patients_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.average_OR1_OR2_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.average_OR3_OR4_utilization_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.specialty_1_selected_ratio_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
+        self.specialty_2_selected_ratio_label.pack(side=ctk.TOP, anchor=ctk.W, padx=(30, 20), pady=(0, 0), fill=ctk.X)
 
     def create_summary_frame(self):
         self.summary_frame = ctk.CTkFrame(master=self.master,
                                           fg_color=(self.THEME1_COLOR2,
                                                     self.THEME2_COLOR2),
-                                          corner_radius=3,
-                                          width=self.summary_frame_width)
+                                          corner_radius=3)
 
         self.summary_label = ctk.CTkLabel(master=self.summary_frame,
                                           fg_color=(self.THEME1_COLOR2,
@@ -1226,8 +1221,6 @@ class GUI(object):
                                        segmented_button_selected_color=self.CRAYON_BLUE,
                                        segmented_button_selected_hover_color=self.DARK_CRAYON_BLUE,
                                        corner_radius=3,
-                                       # width=self.notebook_width,
-                                       # height=400,
                                        command=self.update_patients_summary)
 
         self.notebook.grid(row=0, column=1, sticky=ctk.NSEW, padx=(10, 0), pady=(0, 10))

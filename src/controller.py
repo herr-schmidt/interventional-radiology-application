@@ -1,12 +1,8 @@
 class Controller():
 
-    DEFAULT_TAB_NAME = "Scheda "
-
     def __init__(self, model, view):
         self.model = model
         self.view = view
-
-        self.planning_number = 0
 
     def add_dataframe(tab_name):
         pass
@@ -29,23 +25,21 @@ class Controller():
                                          data_frame=empty_dataframe)
 
     def get_new_tab_name(self):
-        tab_name = self.DEFAULT_TAB_NAME + str(self.planning_number)
-        self.planning_number += 1
-        return tab_name
-    
+        return self.model.get_new_tab_name()
+
     def compute_solution(self, tab_name, optimization_completed_event):
         self.model.compute_solution(tab_name)
         optimization_completed_event.set()
-        
+
     def compute_solution_summary(self, tab_name):
         return self.model.compute_solution_summary(tab_name)
-    
+
     def get_patients_dataframe(self, tab_name):
         return self.model.get_patients_dataframe(tab_name)
-    
+
     def get_planning_dataframe(self, tab_name):
         return self.model.get_planning_dataframe(tab_name)
-    
+
     def update_solver_parameters(self, new_solver_parameters):
         self.model.update_solver_parameters(new_solver_parameters)
 

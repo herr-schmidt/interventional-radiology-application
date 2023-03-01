@@ -1,7 +1,8 @@
-from pandas import read_excel, Timestamp, DataFrame, ExcelWriter
+from pandas import read_excel, Timestamp, DataFrame, ExcelWriter, Series
 from datetime import datetime, timedelta
 from math import floor
 from planners import HeuristicLBBDPlanner, SolutionVisualizer
+from const import IRConstants
 import data
 
 
@@ -18,43 +19,63 @@ class Patient:
 
 class InterventionalRadiologyModel():
 
+    PATIENTS_LIST_HEADER = {"Nome": [],
+                            "Cognome": [],
+                            "Specialità richiesta": [],
+                            "Reparto di provenienza": [],
+                            "Prestazioni": [],
+                            "Anestesia": [],
+                            "Infezioni": [],
+                            "Data inserimento in lista": [],
+                            "MTBT (giorni)": []
+                            }
+
     PLANNING_HEADER = {"Nome": [],
                        "Cognome": [],
-                       "Specialità richiesta": [],
-                       "Reparto di provenienza": [],
-                       "Prestazioni": [],
-                       "Anestesia": [],
-                       "Infezioni": [],
-                       "Data inserimento in lista": [],
-                       "MTBT (giorni)": []
+                       "Sala": [],
+                       "Data operazione": [],
+                       "Orario inizio": [],
+                       "Ritardo": [],
+                       "Anestesista": [],
+                       "Infezioni": []
                        }
 
+    DEFAULT_TAB_NAME = "Scheda "
+
     def __init__(self):
-        self.solver_parameters = {"solver_gap": 0.0,
-                                  "solver_time_limit": 600,
-                                  "solver_robustness_param": 2,
-                                  "solver_operating_room_time": 270,
-                                  "solver_anesthetists": 1,
-                                  "solver_anesthetists_time": 270
+        self.solver_parameters = {IRConstants.SOLVER_GAP: 0.0,
+                                  IRConstants.SOLVER_TIME_LIMIT: 600,
+                                  IRConstants.SOLVER_ROBUSTNESS_PARAM: 2,
+                                  IRConstants.SOLVER_OPERATING_ROOM_TIME: 270,
+                                  IRConstants.SOLVER_ANESTHETISTS: 1,
+                                  IRConstants.SOLVER_ANESTHETISTS_TIME: 270
                                   }
 
         self.patients_dataframes = dict()  # dict of length 2 lists: 0 -> patients list; 1 -> selected patients list
         self.runs_statistics = dict()
 
+        self.planning_number = 0
+
     def update_solver_parameters(self, new_solver_parameters):
         self.solver_parameters = new_solver_parameters
 
+    def get_new_tab_name(self):
+        tab_name = self.DEFAULT_TAB_NAME + str(self.planning_number)
+        self.planning_number += 1
+        return tab_name
+
     def import_from_excel(self, tab_name, selected_file):
-        dataframe = read_excel(selected_file.name)
-        self.patients_dataframes[tab_name] = [dataframe, None]
+        patients_list_dataframe = read_excel(selected_file.name)
+        planning_empty_dataframe = DataFrame(data=self.PLANNING_HEADER)
+        self.patients_dataframes[tab_name] = [patients_list_dataframe, planning_empty_dataframe]
 
         # needed for display
-        return dataframe
+        return patients_list_dataframe
 
     def compute_solution(self, tab_name):
         parameter_dict = self.initialize_solver_data(tab_name)
-        planner = HeuristicLBBDPlanner(timeLimit=self.solver_parameters["solver_time_limit"],
-                                       gap=self.solver_parameters["solver_gap"] / 100, iterations_cap=10, solver="cplex")
+        planner = HeuristicLBBDPlanner(timeLimit=self.solver_parameters[IRConstants.SOLVER_TIME_LIMIT],
+                                       gap=self.solver_parameters[IRConstants.SOLVER_GAP] / 100, iterations_cap=10, solver="cplex")
         planner.solve_model(parameter_dict)
         run_info = planner.extract_run_info()
         solution = planner.extract_solution()
@@ -68,44 +89,50 @@ class InterventionalRadiologyModel():
             sv.plot_graph(solution, file_name=tab_name)
 
     def store_solution_as_dataframe(self, tab_name, solution, run_info):
-        planning_dataframe = {"Nome": [],
-                              "Cognome": [],
-                              "Sala": [],
-                              "Data operazione": [],
-                              "Orario inizio": [],
-                              "Ritardo": [],
-                              "Anestesista": [],
-                              "Infezioni": []
-                              }
-
         if solution:
+            names = []
+            surnames = []
+            operating_rooms = []
+            surgery_dates = []
+            surgery_times = []
+            delays = []
+            anesthetists = []
+            infections = []
+
             for key in solution.keys():
                 for patient in solution[key]:
-                    planning_dataframe["Nome"].append(patient.id)
-                    planning_dataframe["Cognome"].append(patient.id)
-                    planning_dataframe["Sala"].append("S" + str(key[0]))
+                    names.append(patient.id)
+                    surnames.append(patient.id)
+                    operating_rooms.append("S" + str(key[0]))
 
                     today = datetime.now().weekday()
                     days_to_monday = 7 - today
                     next_monday = datetime.now() + timedelta(days=days_to_monday)
                     target_date = next_monday + timedelta(days=key[1] - 1)  # minus one since t = {1, 2, 3, 4, 5}
-                    planning_dataframe["Data operazione"].append(target_date.date())
+                    surgery_dates.append(target_date.date())
 
                     target_time = datetime(year=1970, month=1, day=1, hour=8, minute=0) + timedelta(minutes=patient.order)
-
-                    planning_dataframe["Orario inizio"].append(target_time.time())
+                    surgery_times.append(target_time.time())
 
                     def get_delay(delay): return "Sì" if delay else "No"
-                    planning_dataframe["Ritardo"].append(get_delay(patient.delay))
+                    delays.append(get_delay(patient.delay))
 
                     def get_anesthetist(anesthetist): return "A" + str(anesthetist) if anesthetist > 0 else ""
-                    planning_dataframe["Anestesista"].append(get_anesthetist(patient.anesthetist))
+                    anesthetists.append(get_anesthetist(patient.anesthetist))
 
                     def get_infection_info(infection): return "Sì" if infection else "No"
-                    planning_dataframe["Infezioni"].append(get_infection_info(patient.infection))
+                    infections.append(get_infection_info(patient.infection))
 
-        self.patients_dataframes[tab_name][1] = DataFrame(data=planning_dataframe)
-        self.runs_statistics[tab_name] = run_info
+            self.patients_dataframes[tab_name][1]["Nome"] = Series(names)
+            self.patients_dataframes[tab_name][1]["Cognome"] = Series(surnames)
+            self.patients_dataframes[tab_name][1]["Sala"] = Series(surnames)
+            self.patients_dataframes[tab_name][1]["Data operazione"] = Series(surgery_dates)
+            self.patients_dataframes[tab_name][1]["Orario inizio"] = Series(surgery_times)
+            self.patients_dataframes[tab_name][1]["Ritardo"] = Series(delays)
+            self.patients_dataframes[tab_name][1]["Anestesista"] = Series(anesthetists)
+            self.patients_dataframes[tab_name][1]["Infezioni"] = Series(infections)
+
+            self.runs_statistics[tab_name] = run_info
 
     def initialize_solver_data(self, tab_name):
         data_frame = self.patients_dataframes[tab_name][0]
@@ -114,7 +141,7 @@ class InterventionalRadiologyModel():
         specialties_number = 2
         operating_rooms = 4
         time_horizon = 5
-        max_operating_room_time = self.solver_parameters["solver_operating_room_time"]
+        max_operating_room_time = self.solver_parameters[IRConstants.SOLVER_OPERATING_ROOM_TIME]
 
         patient_ids = self.list_to_dict([i for i in range(1, patients + 1)])
         anesthesia_flags = self.list_to_dict(data_frame.loc[:, "Anestesia"])
@@ -136,7 +163,7 @@ class InterventionalRadiologyModel():
                 'J': {None: specialties_number},
                 'K': {None: operating_rooms},
                 'T': {None: time_horizon},
-                'A': {None: self.solver_parameters["solver_anesthetists"]},
+                'A': {None: self.solver_parameters[IRConstants.SOLVER_ANESTHETISTS]},
                 'M': {None: 7},
                 'Q': {None: 1},
                 's': self.generate_room_availability_table(operating_rooms, time_horizon),
@@ -169,11 +196,11 @@ class InterventionalRadiologyModel():
 
     # we assume the same timespan for each room, on each day
     def generate_room_availability_table(self, operating_rooms, time_horizon):
-        return {(k, t): self.solver_parameters["solver_operating_room_time"] for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
+        return {(k, t): self.solver_parameters[IRConstants.SOLVER_OPERATING_ROOM_TIME] for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
 
     # we assume same availability for each anesthetist
     def generate_anesthetists_availability_table(self, time_horizon):
-        return {(a, t): self.solver_parameters["solver_anesthetists_time"] for a in range(1, self.solver_parameters["solver_anesthetists"] + 1) for t in range(1, time_horizon + 1)}
+        return {(a, t): self.solver_parameters[IRConstants.SOLVER_ANESTHETISTS_TIME] for a in range(1, self.solver_parameters[IRConstants.SOLVER_ANESTHETISTS] + 1) for t in range(1, time_horizon + 1)}
 
     def generate_room_specialty_mapping(self, specialties, operating_rooms, time_horizon):
         table = {(j, k, t): 0 for j in range(1, specialties + 1) for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
@@ -245,7 +272,7 @@ class InterventionalRadiologyModel():
 
     # assume same robustness_parameter value for each (k, t) slot (single delay type q = 1)
     def compute_robustness_table(self, operating_rooms, time_horizon):
-        return {(1, k, t): self.solver_parameters["solver_robustness_param"] for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
+        return {(1, k, t): self.solver_parameters[IRConstants.SOLVER_ROBUSTNESS_PARAM] for k in range(1, operating_rooms + 1) for t in range(1, time_horizon + 1)}
 
     def compute_solution_summary(self, tab_name):
         current_data_frame = self.patients_dataframes[tab_name][0]
@@ -265,7 +292,7 @@ class InterventionalRadiologyModel():
         specialty_1_selected_ratio = "N/A"
         specialty_2_selected_ratio = "N/A"
 
-        if planning_dataframe is not None:
+        if not planning_dataframe.empty:
             selected_patients = (str(len(planning_dataframe))
                                  + " ("
                                  + str(round(len(planning_dataframe) / len(current_data_frame) * 100, 2))
@@ -296,11 +323,12 @@ class InterventionalRadiologyModel():
                 }
 
     def create_empty_dataframe(self, tab_name):
-        empty_dataframe = DataFrame(data=self.PLANNING_HEADER)
-        self.patients_dataframes[tab_name] = [empty_dataframe, None]
+        empty_patients_list_dataframe = DataFrame(data=self.PATIENTS_LIST_HEADER)
+        empty_planning_dataframe = DataFrame(data=self.PLANNING_HEADER)
+        self.patients_dataframes[tab_name] = [empty_patients_list_dataframe, empty_planning_dataframe]
 
         # needed for display
-        return empty_dataframe
+        return empty_patients_list_dataframe
 
     def get_patients_dataframe(self, tab_name):
         return self.patients_dataframes[tab_name][0]
@@ -324,5 +352,5 @@ class InterventionalRadiologyModel():
                               sheet_name="Pianificazione",
                               header=list(dataframe[1].columns),
                               index=False)  # avoid writing a column of indices)
-        
+
         writer.close()

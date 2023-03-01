@@ -8,6 +8,7 @@ from math import ceil
 from util import DialogMode
 from embedded_browser import MainBrowserFrame
 from threading import Thread, Event
+from const import IRConstants
 
 
 class EntryWithLabel(ctk.CTkFrame):
@@ -305,7 +306,7 @@ class GUI(object):
                                               label_text_color=self.labels_text_color,
                                               label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                               measure_unit_suffix="(%)",
-                                              default_var_value=solver_parameters["solver_gap"])
+                                              default_var_value=solver_parameters[IRConstants.SOLVER_GAP])
 
             self.time_limit_slider = SliderWithEntry(master=self.frame,
                                                      starting_value=600,
@@ -320,7 +321,7 @@ class GUI(object):
                                                      label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                                      measure_unit_suffix="(s)",
                                                      var_type=ctk.IntVar,
-                                                     default_var_value=solver_parameters["solver_time_limit"])
+                                                     default_var_value=solver_parameters[IRConstants.SOLVER_TIME_LIMIT])
 
             self.robustness_param_slider = SliderWithEntry(master=self.frame,
                                                            starting_value=0,
@@ -335,7 +336,7 @@ class GUI(object):
                                                            label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                                            measure_unit_suffix="(pz./sala)",
                                                            var_type=ctk.IntVar,
-                                                           default_var_value=solver_parameters["solver_robustness_param"])
+                                                           default_var_value=solver_parameters[IRConstants.SOLVER_ROBUSTNESS_PARAM])
 
             self.operating_room_time_slider = SliderWithEntry(master=self.frame,
                                                               starting_value=0,
@@ -350,7 +351,7 @@ class GUI(object):
                                                               label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                                               measure_unit_suffix="(min/giorno)",
                                                               var_type=ctk.IntVar,
-                                                              default_var_value=solver_parameters["solver_operating_room_time"])
+                                                              default_var_value=solver_parameters[IRConstants.SOLVER_OPERATING_ROOM_TIME])
 
             self.anesthetists_slider = SliderWithEntry(master=self.frame,
                                                        starting_value=0,
@@ -365,7 +366,7 @@ class GUI(object):
                                                        label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                                        measure_unit_suffix="(al giorno)",
                                                        var_type=ctk.IntVar,
-                                                       default_var_value=solver_parameters["solver_anesthetists"])
+                                                       default_var_value=solver_parameters[IRConstants.SOLVER_ANESTHETISTS])
 
             self.anesthetists_time_slider = SliderWithEntry(master=self.frame,
                                                             starting_value=0,
@@ -380,7 +381,7 @@ class GUI(object):
                                                             label_text_font=self.parent_view.SOURCE_SANS_PRO_SMALL,
                                                             measure_unit_suffix="(min/giorno)",
                                                             var_type=ctk.IntVar,
-                                                            default_var_value=solver_parameters["solver_anesthetists_time"])
+                                                            default_var_value=solver_parameters[IRConstants.SOLVER_ANESTHETISTS_TIME])
 
             self.confirm_button = ctk.CTkButton(master=self.dialog,
                                                 text="Salva",
@@ -416,12 +417,12 @@ class GUI(object):
             solver_anesthetists = int(new_anesthetists)
             solver_anesthetists_time = int(new_anesthetists_time)
 
-            solver_parameters = {"solver_gap": solver_gap,
-                                 "solver_time_limit": solver_time_limit,
-                                 "solver_robustness_param": solver_robustness_param,
-                                 "solver_operating_room_time": solver_operating_room_time,
-                                 "solver_anesthetists": solver_anesthetists,
-                                 "solver_anesthetists_time": solver_anesthetists_time
+            solver_parameters = {IRConstants.SOLVER_GAP: solver_gap,
+                                 IRConstants.SOLVER_TIME_LIMIT: solver_time_limit,
+                                 IRConstants.SOLVER_ROBUSTNESS_PARAM: solver_robustness_param,
+                                 IRConstants.SOLVER_OPERATING_ROOM_TIME: solver_operating_room_time,
+                                 IRConstants.SOLVER_ANESTHETISTS: solver_anesthetists,
+                                 IRConstants.SOLVER_ANESTHETISTS_TIME: solver_anesthetists_time
                                  }
             
             self.parent_view.controller.update_solver_parameters(solver_parameters)
@@ -1047,12 +1048,12 @@ class GUI(object):
     def update_solver_summary(self):
         solver_parameters = self.controller.get_solver_parameters()
 
-        self.gap_summary_label.entry_variable.set(str(solver_parameters["solver_gap"]) + " (%)")
-        self.time_limit_summary_label.entry_variable.set(str(solver_parameters["solver_time_limit"]) + " (s)")
-        self.robustness_summary_label.entry_variable.set(str(solver_parameters["solver_robustness_param"]) + " (pz./sala)")
-        self.operating_room_time_label.entry_variable.set(str(solver_parameters["solver_operating_room_time"]) + " (min/giorno)")
-        self.anesthetists_label.entry_variable.set(str(solver_parameters["solver_anesthetists"]) + " (al giorno)")
-        self.anesthetists_time_label.entry_variable.set(str(solver_parameters["solver_anesthetists_time"]) + " (min/giorno)")
+        self.gap_summary_label.entry_variable.set(str(solver_parameters[IRConstants.SOLVER_GAP]) + " (%)")
+        self.time_limit_summary_label.entry_variable.set(str(solver_parameters[IRConstants.SOLVER_TIME_LIMIT]) + " (s)")
+        self.robustness_summary_label.entry_variable.set(str(solver_parameters[IRConstants.SOLVER_ROBUSTNESS_PARAM]) + " (pz./sala)")
+        self.operating_room_time_label.entry_variable.set(str(solver_parameters[IRConstants.SOLVER_OPERATING_ROOM_TIME]) + " (min/giorno)")
+        self.anesthetists_label.entry_variable.set(str(solver_parameters[IRConstants.SOLVER_ANESTHETISTS]) + " (al giorno)")
+        self.anesthetists_time_label.entry_variable.set(str(solver_parameters[IRConstants.SOLVER_ANESTHETISTS_TIME]) + " (min/giorno)")
 
     def close_active_tab(self):
         active_tab = self.notebook.get()

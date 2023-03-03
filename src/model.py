@@ -19,25 +19,25 @@ class Patient:
 
 class InterventionalRadiologyModel():
 
-    PATIENTS_LIST_HEADER = {"Nome": [],
-                            "Cognome": [],
-                            "Specialità richiesta": [],
-                            "Reparto di provenienza": [],
-                            "Prestazioni": [],
-                            "Anestesia": [],
-                            "Infezioni": [],
-                            "Data inserimento in lista": [],
-                            "MTBT (giorni)": []
+    PATIENTS_LIST_HEADER = {IRConstants.PATIENT_NAME.value: [],
+                            IRConstants.PATIENT_SURNAME.value: [],
+                            IRConstants.PATIENT_SPECIALTY.value: [],
+                            IRConstants.PATIENT_WARD.value: [],
+                            IRConstants.PATIENT_PROCEDURES.value: [],
+                            IRConstants.PATIENT_ANESTHESIA.value: [],
+                            IRConstants.PATIENT_INFECTIONS.value: [],
+                            IRConstants.PATIENT_INSERTION_DATE.value: [],
+                            IRConstants.PATIENT_MTBT.value: []
                             }
 
-    PLANNING_HEADER = {"Nome": [],
-                       "Cognome": [],
-                       "Sala": [],
-                       "Data operazione": [],
-                       "Orario inizio": [],
-                       "Ritardo": [],
-                       "Anestesista": [],
-                       "Infezioni": []
+    PLANNING_HEADER = {IRConstants.PATIENT_NAME.value: [],
+                       IRConstants.PATIENT_SURNAME.value: [],
+                       IRConstants.PATIENT_SURGERY_ROOM.value: [],
+                       IRConstants.PATIENT_SURGERY_DAY.value: [],
+                       IRConstants.PATIENT_SURGERY_TIME.value: [],
+                       IRConstants.PATIENT_DELAY.value: [],
+                       IRConstants.PATIENT_ANESTHETIST.value: [],
+                       IRConstants.PATIENT_INFECTIONS.value: []
                        }
 
     DEFAULT_TAB_NAME = "Scheda "
@@ -123,14 +123,14 @@ class InterventionalRadiologyModel():
                     def get_infection_info(infection): return "Sì" if infection else "No"
                     infections.append(get_infection_info(patient.infection))
 
-            self.patients_dataframes[tab_name][1]["Nome"] = Series(names)
-            self.patients_dataframes[tab_name][1]["Cognome"] = Series(surnames)
-            self.patients_dataframes[tab_name][1]["Sala"] = Series(surnames)
-            self.patients_dataframes[tab_name][1]["Data operazione"] = Series(surgery_dates)
-            self.patients_dataframes[tab_name][1]["Orario inizio"] = Series(surgery_times)
-            self.patients_dataframes[tab_name][1]["Ritardo"] = Series(delays)
-            self.patients_dataframes[tab_name][1]["Anestesista"] = Series(anesthetists)
-            self.patients_dataframes[tab_name][1]["Infezioni"] = Series(infections)
+            self.patients_dataframes[tab_name][1][IRConstants.PATIENT_NAME.value] = Series(names)
+            self.patients_dataframes[tab_name][1][IRConstants.PATIENT_SURNAME.value] = Series(surnames)
+            self.patients_dataframes[tab_name][1][IRConstants.PATIENT_SURGERY_ROOM.value] = Series(operating_rooms)
+            self.patients_dataframes[tab_name][1][IRConstants.PATIENT_SURGERY_DAY.value] = Series(surgery_dates)
+            self.patients_dataframes[tab_name][1][IRConstants.PATIENT_SURGERY_TIME.value] = Series(surgery_times)
+            self.patients_dataframes[tab_name][1][IRConstants.PATIENT_DELAY.value] = Series(delays)
+            self.patients_dataframes[tab_name][1][IRConstants.PATIENT_ANESTHETIST.value] = Series(anesthetists)
+            self.patients_dataframes[tab_name][1][IRConstants.PATIENT_INFECTIONS.value] = Series(infections)
 
             self.runs_statistics[tab_name] = run_info
 
@@ -144,13 +144,13 @@ class InterventionalRadiologyModel():
         max_operating_room_time = self.solver_parameters[IRConstants.SOLVER_OPERATING_ROOM_TIME]
 
         patient_ids = self.list_to_dict([i for i in range(1, patients + 1)])
-        anesthesia_flags = self.list_to_dict(data_frame.loc[:, "Anestesia"])
-        infection_flags = self.list_to_dict(data_frame.loc[:, "Infezioni"])
-        specialties = self.list_to_dict(data_frame.loc[:, "Specialità richiesta"])
-        origin_wards = self.list_to_dict(data_frame.loc[:, "Reparto di provenienza"])
-        procedures = self.list_to_dict(data_frame.loc[:, "Prestazioni"])
-        waiting_list_insertion_dates = self.list_to_dict(data_frame.loc[:, "Data inserimento in lista"])
-        mtbt_list = self.list_to_dict(data_frame.loc[:, "MTBT (giorni)"])
+        anesthesia_flags = self.list_to_dict(data_frame.loc[:, IRConstants.PATIENT_ANESTHESIA.value])
+        infection_flags = self.list_to_dict(data_frame.loc[:, IRConstants.PATIENT_INFECTIONS.value])
+        specialties = self.list_to_dict(data_frame.loc[:, IRConstants.PATIENT_SPECIALTY.value])
+        origin_wards = self.list_to_dict(data_frame.loc[:, IRConstants.PATIENT_WARD.value])
+        procedures = self.list_to_dict(data_frame.loc[:, IRConstants.PATIENT_PROCEDURES.value])
+        waiting_list_insertion_dates = self.list_to_dict(data_frame.loc[:, IRConstants.PATIENT_INSERTION_DATE.value])
+        mtbt_list = self.list_to_dict(data_frame.loc[:, IRConstants.PATIENT_MTBT.value])
         priorities = self.compute_priorities(waiting_list_insertion_dates, mtbt_list)
         procedures_durations = self.generate_procedures_durations(procedures)
         procedures_delays = self.generate_procedures_delays(origin_wards)
@@ -278,8 +278,8 @@ class InterventionalRadiologyModel():
         current_data_frame = self.patients_dataframes[tab_name][0]
 
         total_patients = len(current_data_frame)
-        anesthesia_patients = current_data_frame.query("Anestesia == True").shape[0]
-        infectious_patients = current_data_frame.query("Infezioni == True").shape[0]
+        anesthesia_patients = current_data_frame.query(str(IRConstants.PATIENT_ANESTHESIA.value) + " == True").shape[0]
+        infectious_patients = current_data_frame.query(str(IRConstants.PATIENT_INFECTIONS.value) + " == True").shape[0]
 
         planning_dataframe = self.patients_dataframes[tab_name][1]
 
@@ -299,9 +299,9 @@ class InterventionalRadiologyModel():
                                  + "%)"
                                  )
 
-            anesthesia_selected_patients = str(len(planning_dataframe.query("Anestesista != ''")))
-            infectious_selected_patients = str(len(planning_dataframe.query("Infezioni == 'Sì'")))
-            delayed_selected_patients = str(len(planning_dataframe.query("Ritardo == 'Sì'")))
+            anesthesia_selected_patients = str(len(planning_dataframe.query(IRConstants.PATIENT_ANESTHETIST.value + " != ''")))
+            infectious_selected_patients = str(len(planning_dataframe.query(IRConstants.PATIENT_INFECTIONS.value + " == 'Sì'")))
+            delayed_selected_patients = str(len(planning_dataframe.query(IRConstants.PATIENT_DELAY.value + " == 'Sì'")))
 
             run_info = self.runs_statistics[tab_name]
             average_OR1_OR2_utilization = str(round(run_info["specialty_1_OR_utilization"] * 100, 2)) + "%"
@@ -309,17 +309,17 @@ class InterventionalRadiologyModel():
             specialty_1_selected_ratio = str(round(run_info["specialty_1_selection_ratio"] * 100, 2)) + "%"
             specialty_2_selected_ratio = str(round(run_info["specialty_2_selection_ratio"] * 100, 2)) + "%"
 
-        return {"total_patients": total_patients,
-                "anesthesia_patients": anesthesia_patients,
-                "infectious_patients": infectious_patients,
-                "selected_patients": selected_patients,
-                "anesthesia_selected_patients": anesthesia_selected_patients,
-                "infectious_selected_patients": infectious_selected_patients,
-                "delayed_selected_patients": delayed_selected_patients,
-                "average_OR1_OR2_utilization": average_OR1_OR2_utilization,
-                "average_OR3_OR4_utilization": average_OR3_OR4_utilization,
-                "specialty_1_selected_ratio": specialty_1_selected_ratio,
-                "specialty_2_selected_ratio": specialty_2_selected_ratio
+        return {IRConstants.TOTAL_PATIENTS: total_patients,
+                IRConstants.ANESTHESIA_PATIENTS: anesthesia_patients,
+                IRConstants.INFECTIOUS_PATIENTS: infectious_patients,
+                IRConstants.SELECTED_PATIENTS: selected_patients,
+                IRConstants.ANESTHESIA_SELECTED_PATIENTS: anesthesia_selected_patients,
+                IRConstants.INFECTIOUS_SELECTED_PATIENTS: infectious_selected_patients,
+                IRConstants.DELAYED_SELECTED_PATIENTS: delayed_selected_patients,
+                IRConstants.AVERAGE_OR1_OR2_UTILIZATION: average_OR1_OR2_utilization,
+                IRConstants.AVERAGE_OR3_OR4_UTILIZATION: average_OR3_OR4_utilization,
+                IRConstants.SPECIALTY_1_SELECTION_RATIO: specialty_1_selected_ratio,
+                IRConstants.SPECIALTY_2_SELECTION_RATIO: specialty_2_selected_ratio
                 }
 
     def create_empty_dataframe(self, tab_name):

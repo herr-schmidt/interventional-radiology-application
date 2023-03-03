@@ -543,12 +543,12 @@ class GUI(object):
                                    command=lambda label_text=label_text: self.update_summary_checkboxes(label_text))
 
         def update_summary_checkboxes(self, label_text):
-            if label_text == "Anestesia":
+            if label_text == IRConstants.PATIENT_ANESTHESIA:
                 if self.anesthesia_checkbox.get():
                     self.summary_anesthesia_entry.entry_variable.set("Sì")
                 else:
                     self.summary_anesthesia_entry.entry_variable.set("No")
-            if label_text == "Infezioni in atto":
+            if label_text == IRConstants.PATIENT_INFECTIONS:
                 if self.infections_checkbox.get():
                     self.summary_infections_entry.entry_variable.set("Sì")
                 else:
@@ -564,11 +564,11 @@ class GUI(object):
                                                text="Informazioni paziente",
                                                font=self.section_font,
                                                text_color=self.labels_text_color)
-            self.name_entry = self.create_registry_entry(label_text="Nome")
-            self.surname_entry = self.create_registry_entry(label_text="Cognome")
-            self.waiting_list_date_entry = self.create_registry_entry(label_text="Inserimento in lista d'attesa")
-            self.anesthesia_checkbox = self.create_registry_checkbox(label_text="Anestesia")
-            self.infections_checkbox = self.create_registry_checkbox(label_text="Infezioni in atto")
+            self.name_entry = self.create_registry_entry(label_text=IRConstants.PATIENT_NAME)
+            self.surname_entry = self.create_registry_entry(label_text=IRConstants.PATIENT_SURNAME)
+            self.waiting_list_date_entry = self.create_registry_entry(label_text=IRConstants.PATIENT_INSERTION_DATE)
+            self.anesthesia_checkbox = self.create_registry_checkbox(label_text=IRConstants.PATIENT_ANESTHESIA)
+            self.infections_checkbox = self.create_registry_checkbox(label_text=IRConstants.PATIENT_INFECTIONS)
 
         def bind_summary_interaction(self):
             self.name_entry.entry_variable.trace_add(mode="write",
@@ -667,7 +667,7 @@ class GUI(object):
                                                  border_color="gray80",
                                                  border_width=1)
             self.procedures_label = ctk.CTkLabel(master=self.procedures_frame,
-                                                 text="Prestazioni",
+                                                 text=IRConstants.PATIENT_PROCEDURES,
                                                  font=self.section_font,
                                                  text_color=self.labels_text_color)
 
@@ -1302,17 +1302,17 @@ class GUI(object):
         current_tab_name = self.notebook.get()
         solution_summary = self.controller.compute_solution_summary(current_tab_name)
 
-        total_patients = solution_summary["total_patients"]
-        anesthesia_patients = solution_summary["anesthesia_patients"]
-        infectious_patients = solution_summary["infectious_patients"]
-        selected_patients = solution_summary["selected_patients"]
-        anesthesia_selected_patients = solution_summary["anesthesia_selected_patients"]
-        infectious_selected_patients = solution_summary["infectious_selected_patients"]
-        delayed_selected_patients = solution_summary["delayed_selected_patients"]
-        average_OR1_OR2_utilization = solution_summary["average_OR1_OR2_utilization"]
-        average_OR3_OR4_utilization = solution_summary["average_OR3_OR4_utilization"]
-        specialty_1_selected_ratio = solution_summary["specialty_1_selected_ratio"]
-        specialty_2_selected_ratio = solution_summary["specialty_2_selected_ratio"]
+        total_patients = solution_summary[IRConstants.TOTAL_PATIENTS]
+        anesthesia_patients = solution_summary[IRConstants.ANESTHESIA_PATIENTS]
+        infectious_patients = solution_summary[IRConstants.INFECTIOUS_PATIENTS]
+        selected_patients = solution_summary[IRConstants.SELECTED_PATIENTS]
+        anesthesia_selected_patients = solution_summary[IRConstants.ANESTHESIA_SELECTED_PATIENTS]
+        infectious_selected_patients = solution_summary[IRConstants.INFECTIOUS_SELECTED_PATIENTS]
+        delayed_selected_patients = solution_summary[IRConstants.DELAYED_SELECTED_PATIENTS]
+        average_OR1_OR2_utilization = solution_summary[IRConstants.AVERAGE_OR1_OR2_UTILIZATION]
+        average_OR3_OR4_utilization = solution_summary[IRConstants.AVERAGE_OR3_OR4_UTILIZATION]
+        specialty_1_selected_ratio = solution_summary[IRConstants.SPECIALTY_1_SELECTION_RATIO]
+        specialty_2_selected_ratio = solution_summary[IRConstants.SPECIALTY_2_SELECTION_RATIO]
 
         self.total_patients_summary_entry.entry_variable.set(str(total_patients))
         self.total_anesthesia_patients_summary_entry.entry_variable.set(str(anesthesia_patients))
